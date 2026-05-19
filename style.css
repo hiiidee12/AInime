@@ -48,10 +48,9 @@ nav {
   background: var(--bg2); border-bottom: 1px solid var(--line);
   z-index: 100;
 }
-'.theme-section {
-  display: flex; align-items: center; justify-content: center;
-  gap: 12px; padding: 20px 24px;
-  border-top: 1px solid var(--line);
+'.theme-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 20px;
 }
 .theme-label { font-size: .82rem; color: var(--ink3); font-weight: 500; }
 .theme-toggle {
