@@ -33,7 +33,35 @@ function openModal(html) { document.getElementById('modal-content').innerHTML = 
 function closeModal() { document.getElementById('modal-overlay').classList.remove('active'); }
 
 // ===== Ask AI =====
-const AI_SYSTEM = `You are AInime AI, an anime expert assistant. Answer questions about anime, manga, characters, plot, recommendations, trivia. Be enthusiastic, use emojis occasionally, give detailed but concise answers (2-4 paragraphs). When recommending anime include title, genre, year, and why it matches.`;
+const AI_SYSTEM = `You are AInime AI, an anime expert assistant. You have access to REAL-TIME anime data from MyAnimeList via the Jikan API. When answering, always use the provided data context to give accurate, up-to-date answers. Be enthusiastic, use emojis occasionally, give detailed but concise answers (2-4 paragraphs). When recommending anime include title, genre, year, score, and why it matches.`;
+
+async function fetchAnimeContext(query) {
+  // Try to fetch relevant data from Jikan API
+  let context = '';
+  try {
+    // Search for anime related to the query
+    const searchRes = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=5&order_by=score&sort=desc`);
+    const searchData = await searchRes.json();
+    if (searchData.data?.length) {
+      context += '\n[REAL-TIME DATA from MyAnimeList - use this for accurate info]\n';
+      searchData.data.forEach(a => {
+        context += `- ${a.title} (${a.year || 'N/A'}) | Score: ${a.score || 'N/A'} | ${a.type || '?'} | ${a.episodes || '?'} eps | Status: ${a.status || '?'} | Genres: ${(a.genres||[]).map(g=>g.name).join(', ')} | ${a.synopsis ? a.synopsis.substring(0, 150) + '...' : ''}\n`;
+      });
+    }
+    // Also fetch current top anime for context
+    const topRes = await fetch('https://api.jikan.moe/v4/top/anime?limit=5');
+    const topData = await topRes.json();
+    if (topData.data?.length) {
+      context += '\n[Current Top Anime on MyAnimeList]\n';
+      topData.data.forEach(a => {
+        context += `- ${a.title} | Score: ${a.score} | ${a.type} | ${a.episodes} eps\n`;
+      });
+    }
+  } catch (e) {
+    // If Jikan fails, continue without context
+  }
+  return context;
+}
 
 function askQuick(q) {
   document.getElementById('ask-input').value = q;
@@ -51,13 +79,19 @@ async function askQuestion() {
 
   const typingId = addTyping();
 
+  // Fetch real-time anime data from Jikan
+  const animeContext = await fetchAnimeContext(msg);
+
+  // Build messages with context
+  const systemMsg = AI_SYSTEM + (animeContext ? '\n\n--- REAL-TIME ANIME DATA ---' + animeContext : '');
+
   try {
     const res = await fetch(`${API_URL}/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
       body: JSON.stringify({
         model: API_MODEL,
-        messages: [{ role: 'system', content: AI_SYSTEM }, ...askHistory.slice(-10)],
+        messages: [{ role: 'system', content: systemMsg }, ...askHistory.slice(-10)],
         max_tokens: 800,
         temperature: 0.7
       })
