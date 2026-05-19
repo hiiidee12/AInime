@@ -4,87 +4,105 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AInime — AI Anime Companion</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="particles" id="particles"></div>
 
   <nav>
-    <div class="logo">AInime</div>
-    <div class="nav-links">
+    <div class="logo" onclick="showSection('home')">AInime</div>
+    <button class="mobile-menu" onclick="toggleMobileMenu()">☰</button>
+    <div class="nav-links" id="nav-links">
       <a href="#home" class="active" onclick="showSection('home')">Home</a>
       <a href="#chat" onclick="showSection('chat')">AI Chat</a>
       <a href="#recommend" onclick="showSection('recommend')">Recommender</a>
       <a href="#characters" onclick="showSection('characters')">Characters</a>
+      <a href="#seasonal" onclick="showSection('seasonal')">Seasonal</a>
+      <a href="#quiz" onclick="showSection('quiz')">Quiz</a>
+      <a href="#quotes" onclick="showSection('quotes')">Quotes</a>
+      <a href="#watchlist" onclick="showSection('watchlist')">Watchlist</a>
+      <a href="#news" onclick="showSection('news')">News</a>
     </div>
   </nav>
 
-  <!-- HOME -->
+  <!-- ========== HOME ========== -->
   <section id="home" class="section active">
     <div class="hero">
       <h1><span class="gradient">AInime</span></h1>
       <p class="subtitle">Your AI-Powered Anime Companion</p>
-      <p class="desc">Chat with anime characters, get personalized recommendations, and explore the anime universe with the power of AI.</p>
+      <p class="desc">Chat with anime characters, get personalized recommendations, test your knowledge, track your watchlist, and explore the anime universe with the power of AI.</p>
       <div class="hero-btns">
         <button class="btn primary" onclick="showSection('chat')">Start Chatting</button>
         <button class="btn secondary" onclick="showSection('recommend')">Get Recommendations</button>
       </div>
     </div>
+    <div class="stats-bar">
+      <div class="stat"><span class="stat-num" id="stat-anime">0</span><span class="stat-label">Anime Database</span></div>
+      <div class="stat"><span class="stat-num" id="stat-chars">0</span><span class="stat-label">Characters</span></div>
+      <div class="stat"><span class="stat-num" id="stat-features">9</span><span class="stat-label">AI Features</span></div>
+      <div class="stat"><span class="stat-num">∞</span><span class="stat-label">Possibilities</span></div>
+    </div>
     <div class="features">
-      <div class="feature-card">
+      <div class="feature-card" onclick="showSection('chat')">
         <div class="feature-icon"> </div>
         <h3>AI Character Chat</h3>
         <p>Talk to your favorite anime characters powered by advanced AI language models.</p>
       </div>
-      <div class="feature-card">
+      <div class="feature-card" onclick="showSection('recommend')">
         <div class="feature-icon"> </div>
         <h3>Smart Recommendations</h3>
         <p>Describe your mood or preferences and get personalized anime suggestions.</p>
       </div>
-      <div class="feature-card">
+      <div class="feature-card" onclick="showSection('characters')">
         <div class="feature-icon"> </div>
         <h3>Character Explorer</h3>
-        <p>Discover detailed info about thousands of anime characters from MyAnimeList.</p>
+        <p>Discover detailed info about thousands of anime characters.</p>
+      </div>
+      <div class="feature-card" onclick="showSection('seasonal')">
+        <div class="feature-icon"> </div>
+        <h3>Seasonal Calendar</h3>
+        <p>See what's airing this season and never miss a new anime.</p>
+      </div>
+      <div class="feature-card" onclick="showSection('quiz')">
+        <div class="feature-icon"> </div>
+        <h3>Anime Quiz</h3>
+        <p>Test your anime knowledge with AI-generated trivia questions.</p>
+      </div>
+      <div class="feature-card" onclick="showSection('quotes')">
+        <div class="feature-icon"> </div>
+        <h3>Anime Quotes</h3>
+        <p>Get inspired by iconic quotes from your favorite anime characters.</p>
+      </div>
+      <div class="feature-card" onclick="showSection('watchlist')">
+        <div class="feature-icon"> </div>
+        <h3>Watchlist Tracker</h3>
+        <p>Track and manage your anime watchlist with progress notes.</p>
+      </div>
+      <div class="feature-card" onclick="showSection('news')">
+        <div class="feature-icon"> </div>
+        <h3>Anime News</h3>
+        <p>Stay updated with the latest anime news and announcements.</p>
       </div>
     </div>
   </section>
 
-  <!-- AI CHAT -->
+  <!-- ========== AI CHAT ========== -->
   <section id="chat" class="section">
     <div class="chat-container">
-      <div class="chat-sidebar">
+      <div class="chat-sidebar" id="chat-sidebar">
+        <button class="sidebar-toggle" onclick="toggleSidebar()">✕</button>
         <h3>Choose Character</h3>
-        <div class="character-list" id="character-list">
-          <div class="char-item active" onclick="selectCharacter(0)">
-            <span class="char-avatar">⚔️</span>
-            <div><strong>Gojo Satoru</strong><br><small>Jujutsu Kaisen</small></div>
-          </div>
-          <div class="char-item" onclick="selectCharacter(1)">
-            <span class="char-avatar"> </span>
-            <div><strong>Zero Two</strong><br><small>Darling in the Franxx</small></div>
-          </div>
-          <div class="char-item" onclick="selectCharacter(2)">
-            <span class="char-avatar">⚡</span>
-            <div><strong>Levi Ackerman</strong><br><small>Attack on Titan</small></div>
-          </div>
-          <div class="char-item" onclick="selectCharacter(3)">
-            <span class="char-avatar"> </span>
-            <div><strong>Makima</strong><br><small>Chainsaw Man</small></div>
-          </div>
-          <div class="char-item" onclick="selectCharacter(4)">
-            <span class="char-avatar"> </span>
-            <div><strong>Furina</strong><br><small>Genshin Impact</small></div>
-          </div>
-        </div>
+        <div class="character-list" id="character-list"></div>
         <div class="api-config">
-          <h4>API Settings</h4>
-          <input type="text" id="api-url" placeholder="API Base URL" value="">
+          <h4>⚙️ API Settings</h4>
+          <input type="text" id="api-url" placeholder="API Base URL">
           <input type="password" id="api-key" placeholder="API Key">
           <select id="api-model">
             <option value="gpt-4o-mini">GPT-4o Mini</option>
             <option value="gpt-4o">GPT-4o</option>
-            <option value="claude-3-5-sonnet">Claude 3.5 Sonnet</option>
+            <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+            <option value="deepseek-chat">DeepSeek</option>
             <option value="custom">Custom Model</option>
           </select>
           <button class="btn small" onclick="saveApiConfig()">Save Config</button>
@@ -92,17 +110,11 @@
       </div>
       <div class="chat-main">
         <div class="chat-header" id="chat-header">
-          <span class="char-avatar">⚔️</span>
-          <div><strong>Gojo Satoru</strong><br><small>Ready to chat</small></div>
+          <button class="btn-icon mobile-sidebar-btn" onclick="toggleSidebar()"> </button>
+          <span class="char-avatar" id="chat-avatar">⚔️</span>
+          <div><strong id="chat-name">Gojo Satoru</strong><br><small id="chat-anime">Jujutsu Kaisen</small></div>
         </div>
-        <div class="chat-messages" id="chat-messages">
-          <div class="msg bot">
-            <div class="msg-content">
-              <strong>Gojo Satoru:</strong><br>
-              Yo! The strongest is here. What do you want to talk about?  ✨
-            </div>
-          </div>
-        </div>
+        <div class="chat-messages" id="chat-messages"></div>
         <div class="chat-input">
           <input type="text" id="user-input" placeholder="Type your message..." onkeypress="if(event.key==='Enter')sendMessage()">
           <button class="btn primary" onclick="sendMessage()">Send</button>
@@ -111,10 +123,10 @@
     </div>
   </section>
 
-  <!-- RECOMMENDER -->
+  <!-- ========== RECOMMENDER ========== -->
   <section id="recommend" class="section">
     <div class="recommend-container">
-      <h2>AI Anime Recommender</h2>
+      <h2> AI Anime Recommender</h2>
       <p>Describe what you're in the mood for and our AI will suggest the perfect anime!</p>
       <div class="mood-grid">
         <button class="mood-btn" onclick="setMood('action-packed battles and epic fights')">⚔️ Action</button>
@@ -125,17 +137,19 @@
         <button class="mood-btn" onclick="setMood('sci-fi with futuristic technology and space')">  Sci-Fi</button>
         <button class="mood-btn" onclick="setMood('emotional slice of life stories')">  Slice of Life</button>
         <button class="mood-btn" onclick="setMood('horror and supernatural mysteries')">  Horror</button>
+        <button class="mood-btn" onclick="setMood('isekai and transported to another world')">  Isekai</button>
+        <button class="mood-btn" onclick="setMood('sports and competitive tournaments')">  Sports</button>
       </div>
       <textarea id="mood-input" rows="3" placeholder="Or describe your ideal anime in your own words..."></textarea>
-      <button class="btn primary" onclick="getRecommendation()">Get AI Recommendation</button>
+      <button class="btn primary" onclick="getRecommendation()">✨ Get AI Recommendation</button>
       <div id="recommend-result" class="recommend-result"></div>
     </div>
   </section>
 
-  <!-- CHARACTERS -->
+  <!-- ========== CHARACTERS ========== -->
   <section id="characters" class="section">
     <div class="characters-container">
-      <h2>Anime Character Explorer</h2>
+      <h2> Anime Character Explorer</h2>
       <div class="search-box">
         <input type="text" id="char-search" placeholder="Search anime characters..." onkeypress="if(event.key==='Enter')searchCharacters()">
         <button class="btn primary" onclick="searchCharacters()">Search</button>
@@ -144,9 +158,137 @@
     </div>
   </section>
 
+  <!-- ========== SEASONAL ========== -->
+  <section id="seasonal" class="section">
+    <div class="seasonal-container">
+      <h2> Seasonal Anime</h2>
+      <p>Check out what's airing this season!</p>
+      <div class="season-filters">
+        <select id="season-year" onchange="loadSeasonal()">
+          <option value="2026">2026</option>
+          <option value="2025">2025</option>
+          <option value="2024">2024</option>
+        </select>
+        <select id="season-name" onchange="loadSeasonal()">
+          <option value="spring">Spring</option>
+          <option value="summer" selected>Summer</option>
+          <option value="fall">Fall</option>
+          <option value="winter">Winter</option>
+        </select>
+      </div>
+      <div class="season-grid" id="season-grid">
+        <div class="loading">Loading seasonal anime...</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== QUIZ ========== -->
+  <section id="quiz" class="section">
+    <div class="quiz-container">
+      <h2> Anime Quiz</h2>
+      <div id="quiz-start" class="quiz-panel">
+        <p>Test your anime knowledge! Choose a category and difficulty:</p>
+        <div class="quiz-options">
+          <select id="quiz-category">
+            <option value="general">General Anime</option>
+            <option value="naruto">Naruto</option>
+            <option value="one-piece">One Piece</option>
+            <option value="attack-on-titan">Attack on Titan</option>
+            <option value="genshin">Genshin Impact</option>
+            <option value="studio-ghibli">Studio Ghibli</option>
+          </select>
+          <select id="quiz-difficulty">
+            <option value="easy">Easy</option>
+            <option value="medium" selected>Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+        <button class="btn primary" onclick="startQuiz()">Start Quiz</button>
+      </div>
+      <div id="quiz-game" class="quiz-panel" style="display:none">
+        <div class="quiz-progress">
+          <div class="quiz-progress-bar" id="quiz-progress-bar"></div>
+        </div>
+        <div class="quiz-score">Score: <span id="quiz-score">0</span> / <span id="quiz-total">0</span></div>
+        <div class="quiz-question" id="quiz-question"></div>
+        <div class="quiz-answers" id="quiz-answers"></div>
+      </div>
+      <div id="quiz-result" class="quiz-panel" style="display:none">
+        <h3>Quiz Complete!</h3>
+        <div class="quiz-final-score" id="quiz-final-score"></div>
+        <p id="quiz-result-msg"></p>
+        <button class="btn primary" onclick="resetQuiz()">Play Again</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== QUOTES ========== -->
+  <section id="quotes" class="section">
+    <div class="quotes-container">
+      <h2> Anime Quotes</h2>
+      <p>Get inspired by iconic anime lines</p>
+      <div class="quote-card" id="quote-card">
+        <div class="quote-text" id="quote-text">"Click the button to get an anime quote!"</div>
+        <div class="quote-author" id="quote-author"></div>
+        <div class="quote-anime" id="quote-anime"></div>
+      </div>
+      <button class="btn primary" onclick="getRandomQuote()">✨ New Quote</button>
+    </div>
+  </section>
+
+  <!-- ========== WATCHLIST ========== -->
+  <section id="watchlist" class="section">
+    <div class="watchlist-container">
+      <h2> My Watchlist</h2>
+      <div class="watchlist-controls">
+        <input type="text" id="watchlist-search" placeholder="Search anime to add..." onkeyup="debounceWatchlistSearch()">
+        <select id="watchlist-status">
+          <option value="watching">Watching</option>
+          <option value="completed">Completed</option>
+          <option value="plan-to-watch">Plan to Watch</option>
+          <option value="dropped">Dropped</option>
+        </select>
+      </div>
+      <div id="watchlist-search-results" class="watchlist-search-results"></div>
+      <div class="watchlist-tabs">
+        <button class="tab active" onclick="filterWatchlist('all', this)">All</button>
+        <button class="tab" onclick="filterWatchlist('watching', this)">Watching</button>
+        <button class="tab" onclick="filterWatchlist('completed', this)">Completed</button>
+        <button class="tab" onclick="filterWatchlist('plan-to-watch', this)">Plan to Watch</button>
+        <button class="tab" onclick="filterWatchlist('dropped', this)">Dropped</button>
+      </div>
+      <div class="watchlist-grid" id="watchlist-grid">
+        <div class="empty-state">Your watchlist is empty. Search and add some anime!</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== NEWS ========== -->
+  <section id="news" class="section">
+    <div class="news-container">
+      <h2> Anime News</h2>
+      <p>Latest updates from MyAnimeList</p>
+      <div class="news-grid" id="news-grid">
+        <div class="loading">Loading news...</div>
+      </div>
+    </div>
+  </section>
+
   <footer>
-    <p>AInime &copy; 2026 | Built with  | Powered by Jikan API & OpenAI-compatible LLMs</p>
+    <div class="footer-content">
+      <div class="footer-logo">AInime</div>
+      <p>Built with  by Furina | Powered by Jikan API & OpenAI-compatible LLMs</p>
+      <p class="footer-copy">&copy; 2026 AInime. All rights reserved.</p>
+    </div>
   </footer>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modal-overlay" onclick="closeModal()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div class="modal-content" id="modal-content"></div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>

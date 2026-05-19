@@ -1,20 +1,27 @@
 # AInime — AI Anime Companion
 
-Your AI-powered anime companion! Chat with anime characters, get personalized recommendations, and explore the anime universe.
+Your all-in-one AI-powered anime platform! Chat with characters, get recommendations, test your knowledge, track your watchlist, and explore the anime universe.
 
 ## Features
 
--  **AI Character Chat** — Talk to anime characters (Gojo, Zero Two, Levi, Makima, Furina) powered by any OpenAI-compatible LLM
+-  **AI Character Chat** — Talk to 10 anime characters (Gojo, Zero Two, Levi, Makima, Furina, Eren, Killua, Rem, Luffy, Nezuko) powered by any OpenAI-compatible LLM
 -  **Smart Recommender** — Describe your mood and get personalized anime suggestions
 -  **Character Explorer** — Search thousands of anime characters from MyAnimeList
--  **Dark Neon Aesthetic** — Beautiful UI with particle effects
--  **Bring Your Own API** — Works with OpenAI, Anthropic (via proxy), local LLMs, etc.
+-  **Seasonal Calendar** — Browse anime by season (Spring/Summer/Fall/Winter)
+-  **Anime Quiz** — Test your knowledge across 6 categories (General, Naruto, One Piece, AoT, Genshin, Studio Ghibli)
+-  **Anime Quotes** — Get inspired by iconic anime quotes
+-  **Watchlist Tracker** — Track anime with status (Watching, Completed, Plan to Watch, Dropped)
+-  **Anime News** — Stay updated with latest anime promos
+-  **Dark Neon Aesthetic** — Beautiful UI with particle effects and smooth animations
+-  **Bring Your Own API** — Works with OpenAI, OpenRouter, Together AI, Ollama, vLLM, etc.
+-  **Mobile Responsive** — Works on all devices
 
 ## Tech Stack
 
-- HTML / CSS / Vanilla JavaScript
-- Jikan API (MyAnimeList unofficial API)
+- HTML / CSS / Vanilla JavaScript (zero dependencies)
+- Jikan API (MyAnimeList unofficial API, no key needed)
 - OpenAI-compatible API for AI features
+- localStorage for watchlist & API config persistence
 
 ## Setup
 
@@ -32,6 +39,7 @@ Any OpenAI-compatible API works:
 - OpenAI (GPT-4o, GPT-4o Mini)
 - OpenRouter
 - Together AI
+- DeepSeek
 - Local LLMs (Ollama, LM Studio, vLLM)
 - Custom endpoints
 
