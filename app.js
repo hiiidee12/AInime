@@ -6,6 +6,23 @@ const API_MODEL = 'mimo-v2.5';
 
 let askHistory = [];
 
+// ===== Theme =====
+function initTheme() {
+  const saved = localStorage.getItem('ainime_theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = saved || (prefersDark ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', theme);
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('ainime_theme', next);
+}
+
+initTheme();
+
 // ===== Nav =====
 function showSection(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -22,7 +39,7 @@ function toggleMobileMenu() { document.getElementById('nav-links').classList.tog
 // ===== Toast =====
 function showToast(msg) {
   const t = document.createElement('div');
-  t.style.cssText = 'position:fixed;bottom:20px;right:20px;background:var(--ink);color:#fff;padding:10px 18px;border-radius:8px;z-index:999;font-size:.84rem;box-shadow:0 4px 12px rgba(0,0,0,.15);';
+  t.style.cssText = 'position:fixed;bottom:20px;right:20px;background:var(--bg2);color:var(--ink);border:1px solid var(--line);padding:10px 18px;border-radius:8px;z-index:999;font-size:.84rem;box-shadow:0 4px 12px rgba(0,0,0,.15);';
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 2500);
