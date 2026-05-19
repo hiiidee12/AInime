@@ -1,16 +1,28 @@
 // ===== AInime — AI Anime Companion =====
 
-// ===== API Config =====
+// ===== API Config (MiMo V2.5) =====
+const DEFAULT_API = {
+  url: 'https://token-plan-sgp.xiaomimimo.com/v1',
+  key: 'tp-svb882oahnydue18tmesfeqjkcuccrp06ekjqrlw0hoi51ys',
+  model: 'MiMo-V2.5'
+};
+
 function loadApiConfig() {
-  const s = localStorage.getItem('ainime_config');
-  if (s) { const c = JSON.parse(s); document.getElementById('api-url').value = c.url || ''; document.getElementById('api-key').value = c.key || ''; document.getElementById('api-model').value = c.model || 'gpt-4o-mini'; }
+  const cfg = getApiConfig();
+  document.getElementById('api-url').value = cfg.url;
+  document.getElementById('api-key').value = cfg.key;
+  document.getElementById('api-model').value = cfg.model;
 }
 function saveApiConfig() {
-  const cfg = { url: document.getElementById('api-url').value.trim(), key: document.getElementById('api-key').value.trim(), model: document.getElementById('api-model').value };
+  const cfg = { url: document.getElementById('api-url').value.trim() || DEFAULT_API.url, key: document.getElementById('api-key').value.trim() || DEFAULT_API.key, model: document.getElementById('api-model').value || DEFAULT_API.model };
   localStorage.setItem('ainime_config', JSON.stringify(cfg));
   showToast('API config saved!');
 }
-function getApiConfig() { const s = localStorage.getItem('ainime_config'); return s ? JSON.parse(s) : { url:'', key:'', model:'gpt-4o-mini' }; }
+function getApiConfig() {
+  const s = localStorage.getItem('ainime_config');
+  if (s) { const c = JSON.parse(s); return { url: c.url || DEFAULT_API.url, key: c.key || DEFAULT_API.key, model: c.model || DEFAULT_API.model }; }
+  return { ...DEFAULT_API };
+}
 
 // ===== Navigation =====
 function showSection(id) {
@@ -80,7 +92,7 @@ async function askQuestion() {
 
   if (!config.url || !config.key) {
     removeTyping(typingId);
-    addAskMsg('bot', `<strong> AInime AI:</strong><br>Please set your API config below to enable AI responses! ⚙️`);
+    addAskMsg('bot', `<strong> AInime AI:</strong><br>API error! Please check your API settings. ⚙️`);
     return;
   }
 
@@ -156,7 +168,7 @@ async function getRecommendation() {
   result.style.display = 'block';
   result.textContent = '✨ Thinking...';
 
-  if (!config.url || !config.key) { result.textContent = '⚠️ Set API config in Ask AI section first!'; return; }
+  if (!config.url || !config.key) { result.textContent = '⚠️ API error! Check your API settings in Ask AI section.'; return; }
 
   try {
     const res = await fetch(`${config.url}/chat/completions`, {
