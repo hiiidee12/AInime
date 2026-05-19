@@ -1,4 +1,4 @@
-// ===== AInime — AI Anime Companion =====
+// ===== AInime AI Anime Companion =====
 
 const API_URL = 'https://token-plan-sgp.xiaomimimo.com/v1';
 const API_KEY = 'tp-svb882oahnydue18tmesfeqjkcuccrp06ekjqrlw0hoi51ys';
@@ -33,7 +33,7 @@ function openModal(html) { document.getElementById('modal-content').innerHTML = 
 function closeModal() { document.getElementById('modal-overlay').classList.remove('active'); }
 
 // ===== Ask AI =====
-const AI_SYSTEM = `You are AInime AI, an anime expert assistant. You have access to REAL-TIME anime data from MyAnimeList via the Jikan API. When answering, always use the provided data context to give accurate, up-to-date answers. Be enthusiastic, use emojis occasionally, give detailed but concise answers (2-4 paragraphs). When recommending anime include title, genre, year, score, and why it matches.`;
+const AI_SYSTEM = `You are AInime AI, an anime expert assistant. You have access to REAL-TIME anime data from MyAnimeList via the Jikan API. When answering, always use the provided data context to give accurate, up-to-date answers. Be enthusiastic, use emojis occasionally, give detailed but concise answers (2-4 paragraphs). When recommending anime include title, genre, year, score, and why it matches. IMPORTANT: NEVER use em dash (—) or any dash that looks like it. Use commas, colons, or rephrase sentences instead.`;
 
 async function fetchAnimeContext(query) {
   let context = '';
@@ -172,6 +172,8 @@ function removeTyping(id) { const e = document.getElementById(id); if (e) e.remo
 
 function fmt(t) {
   return t
+    .replace(/—/g, ', ')
+    .replace(/–/g, ', ')
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     .replace(/\n/g, '<br>')
@@ -354,7 +356,7 @@ const QUOTES = [
 function getRandomQuote() {
   const q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
   document.getElementById('quote-text').textContent = `"${q.t}"`;
-  document.getElementById('quote-author').textContent = `— ${q.a}`;
+  document.getElementById('quote-author').textContent = `~ ${q.a}`;
   document.getElementById('quote-anime').textContent = q.n;
 }
 
