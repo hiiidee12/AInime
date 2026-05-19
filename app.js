@@ -6,23 +6,6 @@ const API_MODEL = 'mimo-v2.5';
 
 let askHistory = [];
 
-// ===== Theme =====
-function initTheme() {
-  const saved = localStorage.getItem('ainime_theme');
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const theme = saved || (prefersDark ? 'dark' : 'light');
-  document.documentElement.setAttribute('data-theme', theme);
-}
-
-function toggleTheme() {
-  const current = document.documentElement.getAttribute('data-theme') || 'light';
-  const next = current === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('ainime_theme', next);
-}
-
-initTheme();
-
 // ===== Nav =====
 function showSection(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
