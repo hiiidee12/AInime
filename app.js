@@ -1,28 +1,10 @@
 // ===== AInime — AI Anime Companion =====
 
-// ===== API Config (MiMo V2.5) =====
-const DEFAULT_API = {
-  url: 'https://token-plan-sgp.xiaomimimo.com/v1',
-  key: 'tp-svb882oahnydue18tmesfeqjkcuccrp06ekjqrlw0hoi51ys',
-  model: 'mimo-v2.5'
-};
+const API_URL = 'https://token-plan-sgp.xiaomimimo.com/v1';
+const API_KEY = 'tp-svb882oahnydue18tmesfeqjkcuccrp06ekjqrlw0hoi51ys';
+const API_MODEL = 'mimo-v2.5';
 
-function loadApiConfig() {
-  const cfg = getApiConfig();
-  document.getElementById('api-url').value = cfg.url;
-  document.getElementById('api-key').value = cfg.key;
-  document.getElementById('api-model').value = cfg.model;
-}
-function saveApiConfig() {
-  const cfg = { url: document.getElementById('api-url').value.trim() || DEFAULT_API.url, key: document.getElementById('api-key').value.trim() || DEFAULT_API.key, model: document.getElementById('api-model').value || DEFAULT_API.model };
-  localStorage.setItem('ainime_config', JSON.stringify(cfg));
-  showToast('API config saved!');
-}
-function getApiConfig() {
-  const s = localStorage.getItem('ainime_config');
-  if (s) { const c = JSON.parse(s); return { url: c.url || DEFAULT_API.url, key: c.key || DEFAULT_API.key, model: c.model || DEFAULT_API.model }; }
-  return { ...DEFAULT_API };
-}
+let askHistory = [];
 
 // ===== Navigation =====
 function showSection(id) {
@@ -40,7 +22,7 @@ function toggleMobileMenu() { document.getElementById('nav-links').classList.tog
 // ===== Toast =====
 function showToast(msg) {
   const t = document.createElement('div');
-  t.style.cssText = 'position:fixed;bottom:20px;right:20px;background:var(--accent);color:#fff;padding:12px 20px;border-radius:10px;z-index:999;font-size:.9rem;animation:fadeIn .3s';
+  t.style.cssText = 'position:fixed;bottom:20px;right:20px;background:var(--accent);color:#fff;padding:12px 20px;border-radius:10px;z-index:999;font-size:.9rem;';
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 3000);
@@ -51,30 +33,10 @@ function openModal(html) { document.getElementById('modal-content').innerHTML = 
 function closeModal() { document.getElementById('modal-overlay').classList.remove('active'); }
 
 // ===== Ask AI =====
-let askHistory = [];
+const AI_SYSTEM = `You are AInime AI, an anime expert assistant. Answer questions about anime, manga, characters, plot, recommendations, trivia. Be enthusiastic, use emojis occasionally, give detailed but concise answers (2-4 paragraphs). When recommending anime include title, genre, year, and why it matches.`;
 
-const AI_SYSTEM_PROMPT = `You are AInime AI, an expert anime knowledge assistant. You know everything about anime, manga, light novels, characters, studios, voice actors, anime history, and the anime industry.
-
-Your capabilities:
-- Answer any question about anime (characters, plot, lore, power systems, etc.)
-- Give personalized anime recommendations based on mood, genre, or preferences
-- Explain complex anime timelines and watch orders
-- Compare anime, characters, or studios
-- Share anime trivia and fun facts
-- Help beginners get into anime
-- Discuss anime news and seasonal releases
-
-Rules:
-- Always be enthusiastic and knowledgeable about anime
-- Use emojis occasionally to make responses fun
-- Give detailed, well-structured answers
-- When recommending anime, include: title, genre, year, episode count, and why it matches
-- If you're unsure about something, say so honestly
-- Keep responses informative but not overly long (aim for 2-4 paragraphs unless asked for more)
-- You can use markdown formatting for better readability`;
-
-function askPreset(question) {
-  document.getElementById('ask-input').value = question;
+function askQuick(q) {
+  document.getElementById('ask-input').value = q;
   askQuestion();
 }
 
@@ -84,29 +46,19 @@ async function askQuestion() {
   if (!msg) return;
   input.value = '';
 
-  addAskMsg('user', msg);
+  addMsg('user', msg);
   askHistory.push({ role: 'user', content: msg });
 
-  const typingId = addAskTyping();
-  const config = getApiConfig();
-
-  if (!config.url || !config.key) {
-    removeTyping(typingId);
-    addAskMsg('bot', `<strong> AInime AI:</strong><br>API error! Please check your API settings. ⚙️`);
-    return;
-  }
+  const typingId = addTyping();
 
   try {
-    const res = await fetch(`${config.url}/chat/completions`, {
+    const res = await fetch(`${API_URL}/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.key}` },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
       body: JSON.stringify({
-        model: config.model,
-        messages: [
-          { role: 'system', content: AI_SYSTEM_PROMPT },
-          ...askHistory.slice(-10)
-        ],
-        max_tokens: 1000,
+        model: API_MODEL,
+        messages: [{ role: 'system', content: AI_SYSTEM }, ...askHistory.slice(-10)],
+        max_tokens: 800,
         temperature: 0.7
       })
     });
@@ -116,17 +68,18 @@ async function askQuestion() {
     if (data.choices && data.choices[0]) {
       const reply = data.choices[0].message.content;
       askHistory.push({ role: 'assistant', content: reply });
-      addAskMsg('bot', `<strong> AInime AI:</strong><br>${fmt(reply)}`);
+      addMsg('bot', `<strong> AInime AI:</strong><br>${fmt(reply)}`);
     } else {
-      addAskMsg('bot', `<strong> AInime AI:</strong><br>Something went wrong. Please check your API settings! `);
+      const errMsg = data.error?.message || 'Unknown error';
+      addMsg('bot', `<strong> AInime AI:</strong><br>Error: ${errMsg}`);
     }
   } catch (e) {
     removeTyping(typingId);
-    addAskMsg('bot', `<strong> AInime AI:</strong><br>Connection error! Make sure your API URL is correct. `);
+    addMsg('bot', `<strong> AInime AI:</strong><br>Connection error! ${e.message}`);
   }
 }
 
-function addAskMsg(type, content) {
+function addMsg(type, content) {
   const m = document.getElementById('ask-messages');
   const d = document.createElement('div');
   d.className = `msg ${type}`;
@@ -135,7 +88,7 @@ function addAskMsg(type, content) {
   m.scrollTop = m.scrollHeight;
 }
 
-function addAskTyping() {
+function addTyping() {
   const m = document.getElementById('ask-messages');
   const d = document.createElement('div');
   const id = 't-' + Date.now();
@@ -157,38 +110,6 @@ function fmt(t) {
     .replace(/`(.*?)`/g, '<code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:.85em">$1</code>');
 }
 
-// ===== Recommender =====
-function setMood(mood) { document.getElementById('mood-input').value = mood; }
-
-async function getRecommendation() {
-  const mood = document.getElementById('mood-input').value.trim();
-  if (!mood) return alert('Describe your mood first!');
-  const config = getApiConfig();
-  const result = document.getElementById('recommend-result');
-  result.style.display = 'block';
-  result.textContent = '✨ Thinking...';
-
-  if (!config.url || !config.key) { result.textContent = '⚠️ API error! Check your API settings in Ask AI section.'; return; }
-
-  try {
-    const res = await fetch(`${config.url}/chat/completions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.key}` },
-      body: JSON.stringify({
-        model: config.model,
-        messages: [
-          { role: 'system', content: 'You are an anime expert. Recommend 5 anime based on the user mood. For each: title, genre, year, episode count, why it matches, rating/10. Use emojis. Be enthusiastic and detailed.' },
-          { role: 'user', content: `I'm in the mood for: ${mood}` }
-        ],
-        max_tokens: 800,
-        temperature: 0.8
-      })
-    });
-    const data = await res.json();
-    result.innerHTML = data.choices && data.choices[0] ? fmt(data.choices[0].message.content) : 'Failed! Check API settings.';
-  } catch (e) { result.textContent = 'Connection error!'; }
-}
-
 // ===== Character Explorer =====
 async function searchCharacters() {
   const q = document.getElementById('char-search').value.trim();
@@ -205,10 +126,10 @@ async function searchCharacters() {
         <div class="char-info"><h4>${c.name}</h4><p>${c.about ? c.about.substring(0, 80) + '...' : 'No info.'}</p></div>
       </div>
     `).join('');
-  } catch (e) { grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1">Error fetching!</div>'; }
+  } catch (e) { grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1">Error!</div>'; }
 }
 
-// ===== Seasonal Anime =====
+// ===== Seasonal =====
 async function loadSeasonal() {
   const year = document.getElementById('season-year').value;
   const season = document.getElementById('season-name').value;
@@ -217,97 +138,93 @@ async function loadSeasonal() {
   try {
     const res = await fetch(`https://api.jikan.moe/v4/seasons/${year}/${season}?limit=18`);
     const data = await res.json();
-    if (!data.data || !data.data.length) { grid.innerHTML = '<div class="empty-state">No anime found for this season.</div>'; return; }
+    if (!data.data || !data.data.length) { grid.innerHTML = '<div class="empty-state">No anime found.</div>'; return; }
     grid.innerHTML = data.data.map(a => `
-      <div class="anime-card" onclick="window.open('${a.url}', '_blank')">
+      <div class="anime-card" onclick="window.open('${a.url}','_blank')">
         <img src="${a.images.jpg.large_image_url}" alt="${a.title}" loading="lazy">
         <div class="anime-info">
           <h4 title="${a.title}">${a.title}</h4>
-          <div class="anime-meta">
-            <span class="score"> ${a.score || 'N/A'}</span>
-            <span>${a.type || '?'}</span>
-            <span>${a.episodes || '?'} ep</span>
-          </div>
+          <div class="anime-meta"><span class="score"> ${a.score || 'N/A'}</span><span>${a.type || '?'}</span><span>${a.episodes || '?'} ep</span></div>
         </div>
       </div>
     `).join('');
-  } catch (e) { grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1">Error loading seasonal anime.</div>'; }
+  } catch (e) { grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1">Error loading.</div>'; }
 }
 
-// ===== Anime Quiz =====
+// ===== Quiz =====
 let quizState = { questions: [], current: 0, score: 0, answered: false };
 
-function generateQuizQuestions(category) {
-  const banks = {
-    general: [
-      { q: "Which anime features a notebook that can kill anyone whose name is written in it?", a: ["Death Note", "Naruto", "Bleach", "One Piece"], correct: 0 },
-      { q: "What is the name of the main character in Attack on Titan?", a: ["Eren Yeager", "Levi Ackerman", "Mikasa Ackerman", "Armin Arlert"], correct: 0 },
-      { q: "In which anime does the protagonist collect Dragon Balls?", a: ["Dragon Ball", "Naruto", "One Piece", "Bleach"], correct: 0 },
-      { q: "What studio produced Spirited Away?", a: ["Studio Ghibli", "Kyoto Animation", "Madhouse", "ufotable"], correct: 0 },
-      { q: "What is the name of the virtual world in Sword Art Online?", a: ["Aincrad", "Alfheim", "Underworld", "Gun Gale"], correct: 0 },
-      { q: "Which anime has a character named Satoru Gojo?", a: ["Jujutsu Kaisen", "Demon Slayer", "Chainsaw Man", "My Hero Academia"], correct: 0 },
-      { q: "What is the highest-grossing anime film of all time?", a: ["Demon Slayer: Mugen Train", "Your Name", "Spirited Away", "One Piece Film Red"], correct: 0 },
-      { q: "In One Piece, what is Luffy's Devil Fruit?", a: ["Gomu Gomu no Mi", "Mera Mera no Mi", "Hito Hito no Mi", "Gura Gura no Mi"], correct: 0 },
-      { q: "What year was the original Akira movie released?", a: ["1988", "1995", "2001", "1979"], correct: 0 },
-      { q: "Which anime features alchemy as a central power system?", a: ["Fullmetal Alchemist", "Naruto", "Hunter x Hunter", "Fairy Tail"], correct: 0 }
-    ],
-    naruto: [
-      { q: "What is Naruto's signature jutsu?", a: ["Rasengan", "Chidori", "Shadow Clone Jutsu", "Kamehameha"], correct: 0 },
-      { q: "Who is the leader of Akatsuki?", a: ["Pain/Nagato", "Itachi", "Obito", "Madara"], correct: 0 },
-      { q: "What is the name of the Nine-Tailed Fox?", a: ["Kurama", "Shukaku", "Matatabi", "Gyuki"], correct: 0 },
-      { q: "What village is Naruto from?", a: ["Konoha (Hidden Leaf)", "Suna (Hidden Sand)", "Kiri (Hidden Mist)", "Kumo (Hidden Cloud)"], correct: 0 },
-      { q: "Who taught Naruto the Rasengan?", a: ["Jiraiya", "Kakashi", "Minato", "Tsunade"], correct: 0 }
-    ],
-    "one-piece": [
-      { q: "What is the name of Luffy's ship?", a: ["Thousand Sunny & Going Merry", "Oro Jackson", "Red Force", "Polar Tang"], correct: 0 },
-      { q: "Who is the Pirate King?", a: ["Gol D. Roger", "Whitebeard", "Shanks", "Kaido"], correct: 0 },
-      { q: "What is Zoro's goal?", a: ["To become the world's greatest swordsman", "To find the One Piece", "To become Pirate King", "To draw a map of the world"], correct: 0 },
-      { q: "What Devil Fruit does Luffy eat?", a: ["Gomu Gomu no Mi (Nika)", "Mera Mera no Mi", "Ope Ope no Mi", "Gura Gura no Mi"], correct: 0 },
-      { q: "How many Straw Hat crew members are there currently?", a: ["10", "8", "12", "7"], correct: 0 }
-    ],
-    "attack-on-titan": [
-      { q: "What are the three walls that protect humanity?", a: ["Wall Maria, Rose, and Sina", "Wall Titan, Rose, and Sina", "Wall Maria, Rose, and Founding", "Wall Maria, Rose, and Attack"], correct: 0 },
-      { q: "Who is the Armored Titan?", a: ["Reiner Braun", "Bertholdt Hoover", "Annie Leonhart", "Zeke Yeager"], correct: 0 },
-      { q: "What is Eren's last name?", a: ["Yeager", "Ackerman", "Arlelt", "Braun"], correct: 0 },
-      { q: "What can the Founding Titan do?", a: ["Control other titans and Eldians memories", "Transform into any titan", "See the future", "None of the above"], correct: 0 },
-      { q: "What military branch does Levi belong to?", a: ["Survey Corps", "Garrison", "Military Police", "Training Corps"], correct: 0 }
-    ],
-    genshin: [
-      { q: "What element does Furina control?", a: ["Hydro", "Pyro", "Cryo", "Anemo"], correct: 0 },
-      { q: "What is the name of the Traveler's sibling?", a: ["Aether/Lumine (opposite twin)", "Paimon", "Zhongli", "Venti"], correct: 0 },
-      { q: "Which nation is based on Japan in Genshin Impact?", a: ["Inazuma", "Liyue", "Mondstadt", "Sumeru"], correct: 0 },
-      { q: "Who is the Geo Archon?", a: ["Zhongli", "Venti", "Raiden Shogun", "Nahida"], correct: 0 },
-      { q: "What is the name of the Adventurers' Guild receptionist in Mondstadt?", a: ["Katheryne", "Jean", "Amber", "Lisa"], correct: 0 }
-    ],
-    "studio-ghibli": [
-      { q: "What is the name of the main character in Spirited Away?", a: ["Chihiro (Sen)", "Kiki", "Satsuki", "Sophie"], correct: 0 },
-      { q: "In My Neighbor Totoro, what forest spirit do the girls meet?", a: ["Totoro", "Catbus", "Kodama", "No-Face"], correct: 0 },
-      { q: "What film features a moving castle?", a: ["Howl's Moving Castle", "Castle in the Sky", "Spirited Away", "Princess Mononoke"], correct: 0 },
-      { q: "Who directed most Studio Ghibli films?", a: ["Hayao Miyazaki", "Isao Takahata", "Gorou Miyazaki", "Mamoru Hosoda"], correct: 0 },
-      { q: "What is the name of the witch in Kiki's Delivery Service?", a: ["Kiki", "Ursula", "Sophie", "San"], correct: 0 }
-    ]
-  };
-  let qs = banks[category] || banks.general;
-  for (let i = qs.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [qs[i], qs[j]] = [qs[j], qs[i]]; }
-  return qs.slice(0, 5).map(q => {
-    const correctAnswer = q.a[0];
-    const shuffled = [...q.a].sort(() => Math.random() - 0.5);
-    return { q: q.q, a: shuffled, correct: shuffled.indexOf(correctAnswer) };
-  });
-}
+const QUIZ_BANKS = {
+  general: [
+    { q: "Which anime features a notebook that kills anyone whose name is written in it?", a: ["Death Note", "Naruto", "Bleach", "One Piece"], c: 0 },
+    { q: "What studio produced Spirited Away?", a: ["Studio Ghibli", "Kyoto Animation", "Madhouse", "ufotable"], c: 0 },
+    { q: "What is the virtual world in Sword Art Online called?", a: ["Aincrad", "Alfheim", "Underworld", "Gun Gale"], c: 0 },
+    { q: "Which anime features alchemy as a power system?", a: ["Fullmetal Alchemist", "Naruto", "Hunter x Hunter", "Fairy Tail"], c: 0 },
+    { q: "What year was the original Akira released?", a: ["1988", "1995", "2001", "1979"], c: 0 },
+    { q: "Which anime has Satoru Gojo?", a: ["Jujutsu Kaisen", "Demon Slayer", "Chainsaw Man", "My Hero Academia"], c: 0 },
+    { q: "Highest-grossing anime film ever?", a: ["Demon Slayer: Mugen Train", "Your Name", "Spirited Away", "One Piece Film Red"], c: 0 },
+    { q: "What is Luffy's Devil Fruit?", a: ["Gomu Gomu no Mi", "Mera Mera no Mi", "Hito Hito no Mi", "Gura Gura no Mi"], c: 0 },
+    { q: "Main character of Attack on Titan?", a: ["Eren Yeager", "Levi Ackerman", "Mikasa Ackerman", "Armin Arlert"], c: 0 },
+    { q: "Which anime collects Dragon Balls?", a: ["Dragon Ball", "Naruto", "One Piece", "Bleach"], c: 0 }
+  ],
+  naruto: [
+    { q: "Naruto's signature jutsu?", a: ["Rasengan", "Chidori", "Shadow Clone", "Kamehameha"], c: 0 },
+    { q: "Leader of Akatsuki?", a: ["Pain/Nagato", "Itachi", "Obito", "Madara"], c: 0 },
+    { q: "Name of the Nine-Tailed Fox?", a: ["Kurama", "Shukaku", "Matatabi", "Gyuki"], c: 0 },
+    { q: "Who taught Naruto the Rasengan?", a: ["Jiraiya", "Kakashi", "Minato", "Tsunade"], c: 0 },
+    { q: "Naruto's village?", a: ["Konoha", "Suna", "Kiri", "Kumo"], c: 0 }
+  ],
+  "one-piece": [
+    { q: "Luffy's first ship?", a: ["Going Merry", "Thousand Sunny", "Oro Jackson", "Red Force"], c: 0 },
+    { q: "Who is the Pirate King?", a: ["Gol D. Roger", "Whitebeard", "Shanks", "Kaido"], c: 0 },
+    { q: "Zoro's goal?", a: ["Greatest swordsman", "Find One Piece", "Pirate King", "Map the world"], c: 0 },
+    { q: "Straw Hat crew count?", a: ["10", "8", "12", "7"], c: 0 },
+    { q: "Sanji's dream?", a: ["All Blue", "Pirate King", "Greatest swordsman", "Adventure"], c: 0 }
+  ],
+  "attack-on-titan": [
+    { q: "Three walls protecting humanity?", a: ["Maria, Rose, Sina", "Titan, Rose, Sina", "Maria, Rose, Founding", "Maria, Rose, Attack"], c: 0 },
+    { q: "Who is the Armored Titan?", a: ["Reiner Braun", "Bertholdt", "Annie", "Zeke"], c: 0 },
+    { q: "Founding Titan's power?", a: ["Control titans/memories", "Transform into any titan", "See the future", "None"], c: 0 },
+    { q: "Levi's military branch?", a: ["Survey Corps", "Garrison", "Military Police", "Training Corps"], c: 0 },
+    { q: "Eren's last name?", a: ["Yeager", "Ackerman", "Arlelt", "Braun"], c: 0 }
+  ],
+  genshin: [
+    { q: "Furina's element?", a: ["Hydro", "Pyro", "Cryo", "Anemo"], c: 0 },
+    { q: "Nation based on Japan?", a: ["Inazuma", "Liyue", "Mondstadt", "Sumeru"], c: 0 },
+    { q: "Geo Archon?", a: ["Zhongli", "Venti", "Raiden", "Nahida"], c: 0 },
+    { q: "Traveler's sibling name?", a: ["Aether/Lumine", "Paimon", "Zhongli", "Venti"], c: 0 },
+    { q: "Mondstadt receptionist?", a: ["Katheryne", "Jean", "Amber", "Lisa"], c: 0 }
+  ],
+  "studio-ghibli": [
+    { q: "Main character of Spirited Away?", a: ["Chihiro", "Kiki", "Satsuki", "Sophie"], c: 0 },
+    { q: "Forest spirit in Totoro?", a: ["Totoro", "Catbus", "Kodama", "No-Face"], c: 0 },
+    { q: "Film with a moving castle?", a: ["Howl's Moving Castle", "Castle in the Sky", "Spirited Away", "Princess Mononoke"], c: 0 },
+    { q: "Director of most Ghibli films?", a: ["Hayao Miyazaki", "Isao Takahata", "Gorou Miyazaki", "Mamoru Hosoda"], c: 0 },
+    { q: "Witch in Kiki's Delivery Service?", a: ["Kiki", "Ursula", "Sophie", "San"], c: 0 }
+  ]
+};
 
 function startQuiz() {
   const cat = document.getElementById('quiz-category').value;
-  quizState = { questions: generateQuizQuestions(cat), current: 0, score: 0, answered: false };
+  const bank = QUIZ_BANKS[cat] || QUIZ_BANKS.general;
+  const shuffled = [...bank].sort(() => Math.random() - 0.5).slice(0, 5);
+  quizState = {
+    questions: shuffled.map(q => {
+      const correct = q.a[q.c];
+      const answers = [...q.a].sort(() => Math.random() - 0.5);
+      return { q: q.q, a: answers, correct: answers.indexOf(correct) };
+    }),
+    current: 0, score: 0, answered: false
+  };
   document.getElementById('quiz-start').style.display = 'none';
   document.getElementById('quiz-game').style.display = 'block';
   document.getElementById('quiz-result').style.display = 'none';
   document.getElementById('quiz-total').textContent = quizState.questions.length;
   document.getElementById('quiz-score').textContent = '0';
-  showQuizQuestion();
+  showQuizQ();
 }
 
-function showQuizQuestion() {
+function showQuizQ() {
   const q = quizState.questions[quizState.current];
   document.getElementById('quiz-progress-bar').style.width = ((quizState.current / quizState.questions.length) * 100) + '%';
   document.getElementById('quiz-question').textContent = `Q${quizState.current + 1}: ${q.q}`;
@@ -325,19 +242,15 @@ function answerQuiz(idx) {
   else { quizState.score++; document.getElementById('quiz-score').textContent = quizState.score; }
   setTimeout(() => {
     quizState.current++;
-    if (quizState.current >= quizState.questions.length) showQuizResult();
-    else showQuizQuestion();
-  }, 1500);
-}
-
-function showQuizResult() {
-  document.getElementById('quiz-game').style.display = 'none';
-  document.getElementById('quiz-result').style.display = 'block';
-  document.getElementById('quiz-progress-bar').style.width = '100%';
-  const pct = (quizState.score / quizState.questions.length) * 100;
-  document.getElementById('quiz-final-score').textContent = `${quizState.score}/${quizState.questions.length}`;
-  const msgs = pct === 100 ? "Perfect score! You're a true otaku!  " : pct >= 60 ? "Not bad! You know your anime!  " : "Keep watching more anime!  ";
-  document.getElementById('quiz-result-msg').textContent = msgs;
+    if (quizState.current >= quizState.questions.length) {
+      document.getElementById('quiz-game').style.display = 'none';
+      document.getElementById('quiz-result').style.display = 'block';
+      document.getElementById('quiz-progress-bar').style.width = '100%';
+      document.getElementById('quiz-final-score').textContent = `${quizState.score}/${quizState.questions.length}`;
+      const pct = (quizState.score / quizState.questions.length) * 100;
+      document.getElementById('quiz-result-msg').textContent = pct === 100 ? "Perfect! True otaku!  " : pct >= 60 ? "Not bad!  " : "Watch more anime!  ";
+    } else showQuizQ();
+  }, 1200);
 }
 
 function resetQuiz() {
@@ -346,122 +259,95 @@ function resetQuiz() {
   document.getElementById('quiz-result').style.display = 'none';
 }
 
-// ===== Anime Quotes =====
-const animeQuotes = [
-  { text: "If you don't take risks, you can't create a future.", author: "Monkey D. Luffy", anime: "One Piece" },
-  { text: "The world isn't perfect. But it's there for us, doing the best it can... and that's what makes it so damn beautiful.", author: "Roy Mustang", anime: "Fullmetal Alchemist" },
-  { text: "People's lives don't end when they die. It ends when they lose faith.", author: "Itachi Uchiha", anime: "Naruto" },
-  { text: "I'll leave tomorrow's problems to tomorrow's me.", author: "Saitama", anime: "One Punch Man" },
-  { text: "The only ones who should kill are those prepared to be killed.", author: "Lelouch Lamperouge", anime: "Code Geass" },
-  { text: "Whatever you lose, you'll find it again. But what you throw away you'll never get back.", author: "Himura Kenshin", anime: "Rurouni Kenshin" },
-  { text: "A dropout will beat a genius through hard work.", author: "Rock Lee", anime: "Naruto" },
-  { text: "I am the bone of my sword.", author: "Emiya Shirou", anime: "Fate/stay night" },
-  { text: "In this world, wherever there is light, there are also shadows.", author: "Madara Uchiha", anime: "Naruto" },
-  { text: "A lesson without pain is meaningless.", author: "Edward Elric", anime: "Fullmetal Alchemist" },
-  { text: "Fear is not evil. It tells you what your weakness is.", author: "Gildarts Clive", anime: "Fairy Tail" },
-  { text: "I don't want to conquer anything. I just think the guy with the most freedom in this whole ocean... is the Pirate King!", author: "Monkey D. Luffy", anime: "One Piece" },
-  { text: "Those who forgive themselves and are able to accept their true nature... They are the strong ones.", author: "Itachi Uchiha", anime: "Naruto" },
-  { text: "Sometimes, the questions are complicated and the answers are simple.", author: "L Lawliet", anime: "Death Note" },
-  { text: "Being alone is more painful than getting hurt.", author: "Monkey D. Luffy", anime: "One Piece" },
-  { text: "I am atomic.", author: "Cid Kagenou", anime: "The Eminence in Shadow" },
-  { text: "Throughout heaven and earth, I alone am the honored one.", author: "Gojo Satoru", anime: "Jujutsu Kaisen" },
-  { text: "I keep moving forward, until I destroy my enemies.", author: "Eren Yeager", anime: "Attack on Titan" },
-  { text: "You can die anytime, but living takes true courage.", author: "Kenshin Himura", anime: "Rurouni Kenshin" },
-  { text: "Miracles don't exist in this world. Only cause and effect.", author: "Kirigaya Kazuto", anime: "Sword Art Online" },
-  { text: "I'll destroy this cursed world and recreate it!", author: "Obito Uchiha", anime: "Naruto" },
-  { text: "The moment you think of giving up, think of the reason why you held on so long.", author: "Naruto Uzumaki", anime: "Naruto" },
-  { text: "A person grows up when he's able to overcome hardships. Protection is important, but there are some things that a person must learn on his own.", author: "Jiraiya", anime: "Naruto" },
-  { text: "It's not the face that makes someone a monster; it's the choices they make with their lives.", author: "Naruto Uzumaki", anime: "Naruto" },
-  { text: "The only thing we're allowed to do is to believe that we won't regret the choice we made.", author: "Levi Ackerman", anime: "Attack on Titan" }
+// ===== Quotes =====
+const QUOTES = [
+  { t: "If you don't take risks, you can't create a future.", a: "Monkey D. Luffy", n: "One Piece" },
+  { t: "People's lives don't end when they die. It ends when they lose faith.", a: "Itachi Uchiha", n: "Naruto" },
+  { t: "The only ones who should kill are those prepared to be killed.", a: "Lelouch", n: "Code Geass" },
+  { t: "A dropout will beat a genius through hard work.", a: "Rock Lee", n: "Naruto" },
+  { t: "A lesson without pain is meaningless.", a: "Edward Elric", n: "Fullmetal Alchemist" },
+  { t: "Throughout heaven and earth, I alone am the honored one.", a: "Gojo Satoru", n: "Jujutsu Kaisen" },
+  { t: "I keep moving forward, until I destroy my enemies.", a: "Eren Yeager", n: "Attack on Titan" },
+  { t: "I am atomic.", a: "Cid Kagenou", n: "The Eminence in Shadow" },
+  { t: "Being alone is more painful than getting hurt.", a: "Monkey D. Luffy", n: "One Piece" },
+  { t: "Sometimes, the questions are complicated and the answers are simple.", a: "L Lawliet", n: "Death Note" },
+  { t: "Fear is not evil. It tells you what your weakness is.", a: "Gildarts", n: "Fairy Tail" },
+  { t: "Miracles don't exist. Only cause and effect.", a: "Kirito", n: "Sword Art Online" },
+  { t: "The world isn't perfect, but it's there for us doing its best.", a: "Roy Mustang", n: "Fullmetal Alchemist" },
+  { t: "In this world, wherever there is light, there are also shadows.", a: "Madara Uchiha", n: "Naruto" },
+  { t: "You can die anytime, but living takes true courage.", a: "Kenshin", n: "Rurouni Kenshin" },
+  { t: "I'll leave tomorrow's problems to tomorrow's me.", a: "Saitama", n: "One Punch Man" },
+  { t: "Those who forgive themselves are the strong ones.", a: "Itachi Uchiha", n: "Naruto" },
+  { t: "I am the bone of my sword.", a: "Emiya Shirou", n: "Fate/stay night" },
+  { t: "Whatever you lose, you'll find it again.", a: "Kenshin", n: "Rurouni Kenshin" },
+  { t: "The only thing we're allowed to do is believe we won't regret our choice.", a: "Levi", n: "Attack on Titan" }
 ];
 
 function getRandomQuote() {
-  const q = animeQuotes[Math.floor(Math.random() * animeQuotes.length)];
-  document.getElementById('quote-text').textContent = `"${q.text}"`;
-  document.getElementById('quote-author').textContent = `— ${q.author}`;
-  document.getElementById('quote-anime').textContent = q.anime;
-  const card = document.getElementById('quote-card');
-  card.style.animation = 'none';
-  card.offsetHeight;
-  card.style.animation = 'fadeIn .5s ease';
+  const q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+  document.getElementById('quote-text').textContent = `"${q.t}"`;
+  document.getElementById('quote-author').textContent = `— ${q.a}`;
+  document.getElementById('quote-anime').textContent = q.n;
 }
 
 // ===== Watchlist =====
-let watchlist = JSON.parse(localStorage.getItem('ainime_watchlist') || '[]');
-let watchlistFilter = 'all';
-let wlSearchTimer;
+let watchlist = JSON.parse(localStorage.getItem('ainime_wl') || '[]');
+let wlFilter = 'all';
+let wlTimer;
 
-function saveWatchlist() { localStorage.setItem('ainime_watchlist', JSON.stringify(watchlist)); }
+function saveWl() { localStorage.setItem('ainime_wl', JSON.stringify(watchlist)); }
+function debounceWatchlistSearch() { clearTimeout(wlTimer); wlTimer = setTimeout(searchWl, 500); }
 
-function debounceWatchlistSearch() {
-  clearTimeout(wlSearchTimer);
-  wlSearchTimer = setTimeout(() => searchWatchlistAnime(), 500);
-}
-
-async function searchWatchlistAnime() {
+async function searchWl() {
   const q = document.getElementById('watchlist-search').value.trim();
-  const container = document.getElementById('watchlist-search-results');
-  if (!q) { container.innerHTML = ''; return; }
+  const c = document.getElementById('watchlist-search-results');
+  if (!q) { c.innerHTML = ''; return; }
   try {
     const res = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(q)}&limit=5`);
     const data = await res.json();
-    if (!data.data || !data.data.length) { container.innerHTML = '<div style="color:var(--text2);padding:8px">No results</div>'; return; }
-    container.innerHTML = data.data.map(a => `
-      <div class="watchlist-search-item" onclick='addToWatchlist(${JSON.stringify({ id: a.mal_id, title: a.title, image: a.images.jpg.image_url, type: a.type, episodes: a.episodes }).replace(/'/g, "&#39;")})'>
+    if (!data.data?.length) { c.innerHTML = '<div style="color:var(--text2);padding:8px">No results</div>'; return; }
+    c.innerHTML = data.data.map(a => `
+      <div class="watchlist-search-item" onclick='addWl(${JSON.stringify({ id: a.mal_id, title: a.title, image: a.images.jpg.image_url, type: a.type, episodes: a.episodes }).replace(/'/g, "&#39;")})'>
         <img src="${a.images.jpg.image_url}" alt="">
-        <div class="wl-info"><h4>${a.title}</h4><small>${a.type || '?'} | ${a.episodes || '?'} episodes</small></div>
+        <div><h4>${a.title}</h4><small>${a.type || '?'} | ${a.episodes || '?'} ep</small></div>
       </div>
     `).join('');
-  } catch (e) { container.innerHTML = ''; }
+  } catch (e) { c.innerHTML = ''; }
 }
 
-function addToWatchlist(anime) {
+function addWl(anime) {
   if (watchlist.find(w => w.id === anime.id)) { showToast('Already in watchlist!'); return; }
-  const status = document.getElementById('watchlist-status').value;
-  watchlist.push({ ...anime, status, addedAt: Date.now() });
-  saveWatchlist();
-  renderWatchlist();
+  watchlist.push({ ...anime, status: document.getElementById('watchlist-status').value });
+  saveWl(); renderWl();
   document.getElementById('watchlist-search').value = '';
   document.getElementById('watchlist-search-results').innerHTML = '';
-  showToast(`Added "${anime.title}" to watchlist!`);
+  showToast(`Added "${anime.title}"!`);
 }
 
-function removeFromWatchlist(id) {
-  watchlist = watchlist.filter(w => w.id !== id);
-  saveWatchlist();
-  renderWatchlist();
-}
-
-function changeWatchlistStatus(id) {
+function removeWl(id) { watchlist = watchlist.filter(w => w.id !== id); saveWl(); renderWl(); }
+function cycleStatus(id) {
   const item = watchlist.find(w => w.id === id);
   if (!item) return;
-  const statuses = ['watching', 'completed', 'plan-to-watch', 'dropped'];
-  const idx = statuses.indexOf(item.status);
-  item.status = statuses[(idx + 1) % statuses.length];
-  saveWatchlist();
-  renderWatchlist();
+  const s = ['watching', 'completed', 'plan-to-watch'];
+  item.status = s[(s.indexOf(item.status) + 1) % s.length];
+  saveWl(); renderWl();
 }
 
-function filterWatchlist(filter, btn) {
-  watchlistFilter = filter;
-  document.querySelectorAll('.watchlist-tabs .tab').forEach(t => t.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  renderWatchlist();
-}
+function filterWatchlist(f, btn) { wlFilter = f; document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); if (btn) btn.classList.add('active'); renderWl(); }
 
-function renderWatchlist() {
+function renderWl() {
   const grid = document.getElementById('watchlist-grid');
-  const filtered = watchlistFilter === 'all' ? watchlist : watchlist.filter(w => w.status === watchlistFilter);
-  if (!filtered.length) { grid.innerHTML = '<div class="empty-state">No anime here. Search and add some!</div>'; return; }
-  grid.innerHTML = filtered.map(w => `
+  const list = wlFilter === 'all' ? watchlist : watchlist.filter(w => w.status === wlFilter);
+  if (!list.length) { grid.innerHTML = '<div class="empty-state">Search and add anime!</div>'; return; }
+  grid.innerHTML = list.map(w => `
     <div class="wl-card">
       <img src="${w.image}" alt="${w.title}">
       <div class="wl-card-info">
         <h4 title="${w.title}">${w.title}</h4>
         <span class="wl-badge ${w.status}">${w.status.replace(/-/g, ' ')}</span>
         <div class="wl-actions">
-          <button onclick="changeWatchlistStatus(${w.id})">Change</button>
-          <button onclick="removeFromWatchlist(${w.id})">Remove</button>
+          <button onclick="cycleStatus(${w.id})">Change</button>
+          <button onclick="removeWl(${w.id})">Remove</button>
         </div>
       </div>
     </div>
@@ -475,15 +361,11 @@ async function loadNews() {
   try {
     const res = await fetch('https://api.jikan.moe/v4/watch/promos?page=1&limit=10');
     const data = await res.json();
-    if (!data.data || !data.data.length) { grid.innerHTML = '<div class="empty-state">No news available.</div>'; return; }
+    if (!data.data?.length) { grid.innerHTML = '<div class="empty-state">No news.</div>'; return; }
     grid.innerHTML = data.data.map(n => `
-      <div class="news-item" onclick="window.open('${n.trailer?.url || '#'}', '_blank')">
+      <div class="news-item" onclick="window.open('${n.trailer?.url || '#'}','_blank')">
         <img src="${n.entry?.images?.jpg?.image_url || ''}" alt="">
-        <div class="news-info">
-          <h4>${n.title}</h4>
-          <p>${n.entry?.title || ''}</p>
-          <small>Promo</small>
-        </div>
+        <div><h4>${n.title}</h4><p>${n.entry?.title || ''}</p><small>Promo</small></div>
       </div>
     `).join('');
   } catch (e) { grid.innerHTML = '<div class="empty-state">Error loading news.</div>'; }
@@ -492,33 +374,32 @@ async function loadNews() {
 // ===== Particles =====
 function createParticles() {
   const c = document.getElementById('particles');
-  for (let i = 0; i < 35; i++) {
+  for (let i = 0; i < 30; i++) {
     const p = document.createElement('div');
     p.className = 'particle';
     const s = Math.random() * 5 + 2;
-    p.style.cssText = `width:${s}px;height:${s}px;left:${Math.random() * 100}%;animation-duration:${Math.random() * 20 + 10}s;animation-delay:${Math.random() * 10}s`;
-    p.style.background = ['var(--accent)', 'var(--pink)', 'var(--blue)'][Math.floor(Math.random() * 3)];
+    p.style.cssText = `width:${s}px;height:${s}px;left:${Math.random()*100}%;animation-duration:${Math.random()*20+10}s;animation-delay:${Math.random()*10}s;background:${['var(--accent)','var(--pink)','var(--blue)'][Math.floor(Math.random()*3)]}`;
     c.appendChild(p);
   }
 }
 
 // ===== Stats Counter =====
 function animateStats() {
-  const targets = { 'stat-anime': 20000, 'stat-chars': 500000 };
-  Object.entries(targets).forEach(([id, target]) => {
+  ['stat-anime', 'stat-chars'].forEach(id => {
     const el = document.getElementById(id);
-    let current = 0;
-    const step = target / 60;
-    const interval = setInterval(() => {
-      current += step;
-      if (current >= target) { current = target; clearInterval(interval); }
-      el.textContent = Math.floor(current).toLocaleString() + '+';
+    if (!el) return;
+    const target = id === 'stat-anime' ? 20000 : 500000;
+    let cur = 0;
+    const step = target / 50;
+    const iv = setInterval(() => {
+      cur += step;
+      if (cur >= target) { cur = target; clearInterval(iv); }
+      el.textContent = Math.floor(cur).toLocaleString() + '+';
     }, 30);
   });
 }
 
 // ===== Init =====
 createParticles();
-loadApiConfig();
-renderWatchlist();
+renderWl();
 animateStats();
