@@ -36,26 +36,60 @@ function closeModal() { document.getElementById('modal-overlay').classList.remov
 const AI_SYSTEM = `You are AInime AI, an anime expert assistant. You have access to REAL-TIME anime data from MyAnimeList via the Jikan API. When answering, always use the provided data context to give accurate, up-to-date answers. Be enthusiastic, use emojis occasionally, give detailed but concise answers (2-4 paragraphs). When recommending anime include title, genre, year, score, and why it matches.`;
 
 async function fetchAnimeContext(query) {
-  // Try to fetch relevant data from Jikan API
   let context = '';
+  const q = query.toLowerCase();
+
   try {
-    // Search for anime related to the query
-    const searchRes = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=5&order_by=score&sort=desc`);
-    const searchData = await searchRes.json();
-    if (searchData.data?.length) {
-      context += '\n[REAL-TIME DATA from MyAnimeList - use this for accurate info]\n';
-      searchData.data.forEach(a => {
-        context += `- ${a.title} (${a.year || 'N/A'}) | Score: ${a.score || 'N/A'} | ${a.type || '?'} | ${a.episodes || '?'} eps | Status: ${a.status || '?'} | Genres: ${(a.genres||[]).map(g=>g.name).join(', ')} | ${a.synopsis ? a.synopsis.substring(0, 150) + '...' : ''}\n`;
+    // Always fetch current seasonal + upcoming anime (real-time data)
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const month = now.getMonth();
+    const season = month < 3 ? 'winter' : month < 6 ? 'spring' : month < 9 ? 'summer' : 'fall';
+    const nextSeason = season === 'winter' ? 'spring' : season === 'spring' ? 'summer' : season === 'summer' ? 'fall' : 'winter';
+    const nextYear = season === 'fall' ? currentYear + 1 : currentYear;
+
+    // Fetch current season
+    const seasonRes = await fetch(`https://api.jikan.moe/v4/seasons/${currentYear}/${season}?limit=8`);
+    const seasonData = await seasonRes.json();
+    if (seasonData.data?.length) {
+      context += `\n[Current Season: ${season.charAt(0).toUpperCase() + season.slice(1)} ${currentYear} - REAL-TIME from MyAnimeList]\n`;
+      seasonData.data.forEach(a => {
+        const genres = (a.genres || []).map(g => g.name).join(', ');
+        context += `- ${a.title} | Score: ${a.score || 'N/A'} | ${a.type} | ${a.episodes || '?'} eps | Status: ${a.status} | Genres: ${genres}\n`;
       });
     }
-    // Also fetch current top anime for context
-    const topRes = await fetch('https://api.jikan.moe/v4/top/anime?limit=5');
-    const topData = await topRes.json();
-    if (topData.data?.length) {
-      context += '\n[Current Top Anime on MyAnimeList]\n';
-      topData.data.forEach(a => {
+
+    // Fetch next season
+    const nextRes = await fetch(`https://api.jikan.moe/v4/seasons/${nextYear}/${nextSeason}?limit=8`);
+    const nextData = await nextRes.json();
+    if (nextData.data?.length) {
+      context += `\n[Upcoming: ${nextSeason.charAt(0).toUpperCase() + nextSeason.slice(1)} ${nextYear}]\n`;
+      nextData.data.forEach(a => {
+        context += `- ${a.title} | ${a.type} | Status: ${a.status}\n`;
+      });
+    }
+
+    // Fetch top airing anime
+    const airRes = await fetch('https://api.jikan.moe/v4/top/anime?filter=airing&limit=5');
+    const airData = await airRes.json();
+    if (airData.data?.length) {
+      context += `\n[Top Airing Anime Right Now]\n`;
+      airData.data.forEach(a => {
         context += `- ${a.title} | Score: ${a.score} | ${a.type} | ${a.episodes} eps\n`;
       });
+    }
+
+    // Search for specific anime if query mentions a title
+    if (q.length > 3) {
+      const searchRes = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=5&order_by=score&sort=desc`);
+      const searchData = await searchRes.json();
+      if (searchData.data?.length) {
+        context += `\n[Search Results for "${query}"]\n`;
+        searchData.data.forEach(a => {
+          const genres = (a.genres || []).map(g => g.name).join(', ');
+          context += `- ${a.title} (${a.year || 'N/A'}) | Score: ${a.score || 'N/A'} | ${a.type} | ${a.episodes || '?'} eps | Status: ${a.status} | Genres: ${genres} | ${a.synopsis ? a.synopsis.substring(0, 120) + '...' : ''}\n`;
+        });
+      }
     }
   } catch (e) {
     // If Jikan fails, continue without context
