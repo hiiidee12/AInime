@@ -1,4 +1,4 @@
-// ===== AInime AI Anime Companion =====
+// ===== AInime =====
 
 const API_URL = 'https://token-plan-sgp.xiaomimimo.com/v1';
 const API_KEY = 'tp-svb882oahnydue18tmesfeqjkcuccrp06ekjqrlw0hoi51ys';
@@ -6,7 +6,7 @@ const API_MODEL = 'mimo-v2.5';
 
 let askHistory = [];
 
-// ===== Navigation =====
+// ===== Nav =====
 function showSection(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -22,10 +22,10 @@ function toggleMobileMenu() { document.getElementById('nav-links').classList.tog
 // ===== Toast =====
 function showToast(msg) {
   const t = document.createElement('div');
-  t.style.cssText = 'position:fixed;bottom:20px;right:20px;background:var(--accent);color:#fff;padding:12px 20px;border-radius:10px;z-index:999;font-size:.9rem;';
+  t.style.cssText = 'position:fixed;bottom:20px;right:20px;background:var(--ink);color:#fff;padding:10px 18px;border-radius:8px;z-index:999;font-size:.84rem;box-shadow:0 4px 12px rgba(0,0,0,.15);';
   t.textContent = msg;
   document.body.appendChild(t);
-  setTimeout(() => t.remove(), 3000);
+  setTimeout(() => t.remove(), 2500);
 }
 
 // ===== Modal =====
@@ -33,67 +33,55 @@ function openModal(html) { document.getElementById('modal-content').innerHTML = 
 function closeModal() { document.getElementById('modal-overlay').classList.remove('active'); }
 
 // ===== Ask AI =====
-const AI_SYSTEM = `You are AInime AI, an anime expert assistant. You have access to REAL-TIME anime data from MyAnimeList via the Jikan API. When answering, always use the provided data context to give accurate, up-to-date answers. Be enthusiastic, use emojis occasionally, give detailed but concise answers (2-4 paragraphs). When recommending anime include title, genre, year, score, and why it matches. IMPORTANT: NEVER use em dash (—) or any dash that looks like it. Use commas, colons, or rephrase sentences instead.`;
+const AI_SYSTEM = `You are AInime AI, an anime expert assistant. You have access to REAL-TIME anime data from MyAnimeList via the Jikan API. When answering, always use the provided data context to give accurate, up-to-date answers. Be enthusiastic, use emojis occasionally, give detailed but concise answers (2-4 paragraphs). When recommending anime include title, genre, year, score, and why it matches. IMPORTANT: NEVER use em dash (—), en dash (–), or any horizontal dash. Use commas, colons, or rephrase sentences instead.`;
 
 async function fetchAnimeContext(query) {
   let context = '';
   const q = query.toLowerCase();
-
   try {
-    // Always fetch current seasonal + upcoming anime (real-time data)
     const now = new Date();
-    const currentYear = now.getFullYear();
-    const month = now.getMonth();
-    const season = month < 3 ? 'winter' : month < 6 ? 'spring' : month < 9 ? 'summer' : 'fall';
+    const yr = now.getFullYear();
+    const mo = now.getMonth();
+    const season = mo < 3 ? 'winter' : mo < 6 ? 'spring' : mo < 9 ? 'summer' : 'fall';
     const nextSeason = season === 'winter' ? 'spring' : season === 'spring' ? 'summer' : season === 'summer' ? 'fall' : 'winter';
-    const nextYear = season === 'fall' ? currentYear + 1 : currentYear;
+    const nextYr = season === 'fall' ? yr + 1 : yr;
 
-    // Fetch current season
-    const seasonRes = await fetch(`https://api.jikan.moe/v4/seasons/${currentYear}/${season}?limit=8`);
-    const seasonData = await seasonRes.json();
-    if (seasonData.data?.length) {
-      context += `\n[Current Season: ${season.charAt(0).toUpperCase() + season.slice(1)} ${currentYear} - REAL-TIME from MyAnimeList]\n`;
-      seasonData.data.forEach(a => {
-        const genres = (a.genres || []).map(g => g.name).join(', ');
-        context += `- ${a.title} | Score: ${a.score || 'N/A'} | ${a.type} | ${a.episodes || '?'} eps | Status: ${a.status} | Genres: ${genres}\n`;
+    const sRes = await fetch(`https://api.jikan.moe/v4/seasons/${yr}/${season}?limit=8`);
+    const sData = await sRes.json();
+    if (sData.data?.length) {
+      context += `\n[Current Season: ${season.charAt(0).toUpperCase() + season.slice(1)} ${yr}]\n`;
+      sData.data.forEach(a => {
+        const g = (a.genres || []).map(x => x.name).join(', ');
+        context += `- ${a.title} | Score: ${a.score || 'N/A'} | ${a.type} | ${a.episodes || '?'} eps | ${a.status} | ${g}\n`;
       });
     }
 
-    // Fetch next season
-    const nextRes = await fetch(`https://api.jikan.moe/v4/seasons/${nextYear}/${nextSeason}?limit=8`);
-    const nextData = await nextRes.json();
-    if (nextData.data?.length) {
-      context += `\n[Upcoming: ${nextSeason.charAt(0).toUpperCase() + nextSeason.slice(1)} ${nextYear}]\n`;
-      nextData.data.forEach(a => {
-        context += `- ${a.title} | ${a.type} | Status: ${a.status}\n`;
-      });
+    const nRes = await fetch(`https://api.jikan.moe/v4/seasons/${nextYr}/${nextSeason}?limit=8`);
+    const nData = await nRes.json();
+    if (nData.data?.length) {
+      context += `\n[Upcoming: ${nextSeason.charAt(0).toUpperCase() + nextSeason.slice(1)} ${nextYr}]\n`;
+      nData.data.forEach(a => { context += `- ${a.title} | ${a.type} | ${a.status}\n`; });
     }
 
-    // Fetch top airing anime
-    const airRes = await fetch('https://api.jikan.moe/v4/top/anime?filter=airing&limit=5');
-    const airData = await airRes.json();
-    if (airData.data?.length) {
-      context += `\n[Top Airing Anime Right Now]\n`;
-      airData.data.forEach(a => {
-        context += `- ${a.title} | Score: ${a.score} | ${a.type} | ${a.episodes} eps\n`;
-      });
+    const aRes = await fetch('https://api.jikan.moe/v4/top/anime?filter=airing&limit=5');
+    const aData = await aRes.json();
+    if (aData.data?.length) {
+      context += `\n[Top Airing Now]\n`;
+      aData.data.forEach(a => { context += `- ${a.title} | Score: ${a.score} | ${a.type} | ${a.episodes} eps\n`; });
     }
 
-    // Search for specific anime if query mentions a title
     if (q.length > 3) {
-      const searchRes = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=5&order_by=score&sort=desc`);
-      const searchData = await searchRes.json();
-      if (searchData.data?.length) {
-        context += `\n[Search Results for "${query}"]\n`;
-        searchData.data.forEach(a => {
-          const genres = (a.genres || []).map(g => g.name).join(', ');
-          context += `- ${a.title} (${a.year || 'N/A'}) | Score: ${a.score || 'N/A'} | ${a.type} | ${a.episodes || '?'} eps | Status: ${a.status} | Genres: ${genres} | ${a.synopsis ? a.synopsis.substring(0, 120) + '...' : ''}\n`;
+      const sr = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=5&order_by=score&sort=desc`);
+      const sd = await sr.json();
+      if (sd.data?.length) {
+        context += `\n[Search: "${query}"]\n`;
+        sd.data.forEach(a => {
+          const g = (a.genres || []).map(x => x.name).join(', ');
+          context += `- ${a.title} (${a.year || 'N/A'}) | Score: ${a.score || 'N/A'} | ${a.type} | ${a.episodes || '?'} eps | ${g}\n`;
         });
       }
     }
-  } catch (e) {
-    // If Jikan fails, continue without context
-  }
+  } catch (e) { /* continue without context */ }
   return context;
 }
 
@@ -107,51 +95,38 @@ async function askQuestion() {
   const msg = input.value.trim();
   if (!msg) return;
   input.value = '';
-
   addMsg('user', msg);
   askHistory.push({ role: 'user', content: msg });
-
   const typingId = addTyping();
-
-  // Fetch real-time anime data from Jikan
-  const animeContext = await fetchAnimeContext(msg);
-
-  // Build messages with context
-  const systemMsg = AI_SYSTEM + (animeContext ? '\n\n--- REAL-TIME ANIME DATA ---' + animeContext : '');
+  const ctx = await fetchAnimeContext(msg);
+  const sys = AI_SYSTEM + (ctx ? '\n\n--- REAL-TIME DATA ---' + ctx : '');
 
   try {
     const res = await fetch(`${API_URL}/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
-      body: JSON.stringify({
-        model: API_MODEL,
-        messages: [{ role: 'system', content: systemMsg }, ...askHistory.slice(-10)],
-        max_tokens: 800,
-        temperature: 0.7
-      })
+      body: JSON.stringify({ model: API_MODEL, messages: [{ role: 'system', content: sys }, ...askHistory.slice(-10)], max_tokens: 800, temperature: 0.7 })
     });
     const data = await res.json();
     removeTyping(typingId);
-
     if (data.choices && data.choices[0]) {
       const reply = data.choices[0].message.content;
       askHistory.push({ role: 'assistant', content: reply });
-      addMsg('bot', `<strong> AInime AI:</strong><br>${fmt(reply)}`);
+      addMsg('bot', `<strong>AInime AI</strong><br>${fmt(reply)}`);
     } else {
-      const errMsg = data.error?.message || 'Unknown error';
-      addMsg('bot', `<strong> AInime AI:</strong><br>Error: ${errMsg}`);
+      addMsg('bot', `<strong>AInime AI</strong><br>Error: ${data.error?.message || 'Unknown error'}`);
     }
   } catch (e) {
     removeTyping(typingId);
-    addMsg('bot', `<strong> AInime AI:</strong><br>Connection error! ${e.message}`);
+    addMsg('bot', `<strong>AInime AI</strong><br>Connection error. ${e.message}`);
   }
 }
 
 function addMsg(type, content) {
   const m = document.getElementById('ask-messages');
   const d = document.createElement('div');
-  d.className = `msg ${type}`;
-  d.innerHTML = `<div class="msg-content">${content}</div>`;
+  d.className = `msg msg--${type}`;
+  d.innerHTML = `<div class="msg-body">${content}</div>`;
   m.appendChild(d);
   m.scrollTop = m.scrollHeight;
 }
@@ -161,7 +136,7 @@ function addTyping() {
   const d = document.createElement('div');
   const id = 't-' + Date.now();
   d.id = id;
-  d.className = 'msg bot';
+  d.className = 'msg msg--bot';
   d.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
   m.appendChild(d);
   m.scrollTop = m.scrollHeight;
@@ -177,26 +152,26 @@ function fmt(t) {
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     .replace(/\n/g, '<br>')
-    .replace(/`(.*?)`/g, '<code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:.85em">$1</code>');
+    .replace(/`(.*?)`/g, '<code style="background:var(--bg3);padding:2px 5px;border-radius:3px;font-size:.84em">$1</code>');
 }
 
-// ===== Character Explorer =====
+// ===== Characters =====
 async function searchCharacters() {
   const q = document.getElementById('char-search').value.trim();
   if (!q) return;
   const grid = document.getElementById('char-grid');
-  grid.innerHTML = '<div class="loading" style="grid-column:1/-1">Searching...</div>';
+  grid.innerHTML = '<div class="grid-msg">Searching...</div>';
   try {
     const res = await fetch(`https://api.jikan.moe/v4/characters?q=${encodeURIComponent(q)}&limit=12`);
     const data = await res.json();
-    if (!data.data || !data.data.length) { grid.innerHTML = '<div class="empty-state">No characters found!</div>'; return; }
+    if (!data.data?.length) { grid.innerHTML = '<div class="grid-msg">No characters found.</div>'; return; }
     grid.innerHTML = data.data.map(c => `
-      <div class="char-card" onclick="openModal('<h3>${c.name.replace(/'/g, '')}</h3><img src=${c.images.jpg.image_url}><p>${(c.about || 'No info').replace(/'/g, '').replace(/\n/g, '<br>').substring(0, 500)}...</p>')">
+      <div class="char-card" onclick="openModal('<h3>${c.name.replace(/'/g, '')}</h3><img src=${c.images.jpg.image_url}><p>${(c.about || 'No info available.').replace(/'/g, '').replace(/\n/g, '<br>').substring(0, 500)}...</p>')">
         <img src="${c.images.jpg.image_url}" alt="${c.name}" loading="lazy">
-        <div class="char-info"><h4>${c.name}</h4><p>${c.about ? c.about.substring(0, 80) + '...' : 'No info.'}</p></div>
+        <div class="char-meta"><h4>${c.name}</h4><p>${c.about ? c.about.substring(0, 80) + '...' : 'No info.'}</p></div>
       </div>
     `).join('');
-  } catch (e) { grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1">Error!</div>'; }
+  } catch (e) { grid.innerHTML = '<div class="grid-msg">Error loading characters.</div>'; }
 }
 
 // ===== Seasonal =====
@@ -204,21 +179,21 @@ async function loadSeasonal() {
   const year = document.getElementById('season-year').value;
   const season = document.getElementById('season-name').value;
   const grid = document.getElementById('season-grid');
-  grid.innerHTML = '<div class="loading" style="grid-column:1/-1">Loading...</div>';
+  grid.innerHTML = '<div class="grid-msg">Loading...</div>';
   try {
     const res = await fetch(`https://api.jikan.moe/v4/seasons/${year}/${season}?limit=18`);
     const data = await res.json();
-    if (!data.data || !data.data.length) { grid.innerHTML = '<div class="empty-state">No anime found.</div>'; return; }
+    if (!data.data?.length) { grid.innerHTML = '<div class="grid-msg">No anime found for this season.</div>'; return; }
     grid.innerHTML = data.data.map(a => `
       <div class="anime-card" onclick="window.open('${a.url}','_blank')">
         <img src="${a.images.jpg.large_image_url}" alt="${a.title}" loading="lazy">
-        <div class="anime-info">
+        <div class="anime-meta">
           <h4 title="${a.title}">${a.title}</h4>
-          <div class="anime-meta"><span class="score"> ${a.score || 'N/A'}</span><span>${a.type || '?'}</span><span>${a.episodes || '?'} ep</span></div>
+          <div class="anime-info"><span class="score">${a.score || 'N/A'}</span><span>${a.type || '?'}</span><span>${a.episodes || '?'} ep</span></div>
         </div>
       </div>
     `).join('');
-  } catch (e) { grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1">Error loading.</div>'; }
+  } catch (e) { grid.innerHTML = '<div class="grid-msg">Error loading seasonal data.</div>'; }
 }
 
 // ===== Quiz =====
@@ -291,12 +266,14 @@ function startQuiz() {
   document.getElementById('quiz-result').style.display = 'none';
   document.getElementById('quiz-total').textContent = quizState.questions.length;
   document.getElementById('quiz-score').textContent = '0';
+  document.getElementById('quiz-qnum').textContent = '1';
   showQuizQ();
 }
 
 function showQuizQ() {
   const q = quizState.questions[quizState.current];
   document.getElementById('quiz-progress-bar').style.width = ((quizState.current / quizState.questions.length) * 100) + '%';
+  document.getElementById('quiz-qnum').textContent = quizState.current + 1;
   document.getElementById('quiz-question').textContent = `Q${quizState.current + 1}: ${q.q}`;
   document.getElementById('quiz-answers').innerHTML = q.a.map((a, i) => `<button class="quiz-answer" onclick="answerQuiz(${i})">${a}</button>`).join('');
   quizState.answered = false;
@@ -318,9 +295,9 @@ function answerQuiz(idx) {
       document.getElementById('quiz-progress-bar').style.width = '100%';
       document.getElementById('quiz-final-score').textContent = `${quizState.score}/${quizState.questions.length}`;
       const pct = (quizState.score / quizState.questions.length) * 100;
-      document.getElementById('quiz-result-msg').textContent = pct === 100 ? "Perfect! True otaku!  " : pct >= 60 ? "Not bad!  " : "Watch more anime!  ";
+      document.getElementById('quiz-result-msg').textContent = pct === 100 ? "Perfect score! True otaku." : pct >= 60 ? "Not bad at all!" : "Watch more anime!";
     } else showQuizQ();
-  }, 1200);
+  }, 1000);
 }
 
 function resetQuiz() {
@@ -355,8 +332,8 @@ const QUOTES = [
 
 function getRandomQuote() {
   const q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
-  document.getElementById('quote-text').textContent = `"${q.t}"`;
-  document.getElementById('quote-author').textContent = `~ ${q.a}`;
+  document.getElementById('quote-text').textContent = q.t;
+  document.getElementById('quote-author').textContent = q.a;
   document.getElementById('quote-anime').textContent = q.n;
 }
 
@@ -375,9 +352,9 @@ async function searchWl() {
   try {
     const res = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(q)}&limit=5`);
     const data = await res.json();
-    if (!data.data?.length) { c.innerHTML = '<div style="color:var(--text2);padding:8px">No results</div>'; return; }
+    if (!data.data?.length) { c.innerHTML = '<div style="color:var(--ink3);padding:8px;font-size:.84rem">No results found.</div>'; return; }
     c.innerHTML = data.data.map(a => `
-      <div class="watchlist-search-item" onclick='addWl(${JSON.stringify({ id: a.mal_id, title: a.title, image: a.images.jpg.image_url, type: a.type, episodes: a.episodes }).replace(/'/g, "&#39;")})'>
+      <div class="wl-search-item" onclick='addWl(${JSON.stringify({ id: a.mal_id, title: a.title, image: a.images.jpg.image_url, type: a.type, episodes: a.episodes }).replace(/'/g, "&#39;")})'>
         <img src="${a.images.jpg.image_url}" alt="">
         <div><h4>${a.title}</h4><small>${a.type || '?'} | ${a.episodes || '?'} ep</small></div>
       </div>
@@ -386,12 +363,12 @@ async function searchWl() {
 }
 
 function addWl(anime) {
-  if (watchlist.find(w => w.id === anime.id)) { showToast('Already in watchlist!'); return; }
+  if (watchlist.find(w => w.id === anime.id)) { showToast('Already in your watchlist.'); return; }
   watchlist.push({ ...anime, status: document.getElementById('watchlist-status').value });
   saveWl(); renderWl();
   document.getElementById('watchlist-search').value = '';
   document.getElementById('watchlist-search-results').innerHTML = '';
-  showToast(`Added "${anime.title}"!`);
+  showToast(`Added "${anime.title}"`);
 }
 
 function removeWl(id) { watchlist = watchlist.filter(w => w.id !== id); saveWl(); renderWl(); }
@@ -408,11 +385,11 @@ function filterWatchlist(f, btn) { wlFilter = f; document.querySelectorAll('.tab
 function renderWl() {
   const grid = document.getElementById('watchlist-grid');
   const list = wlFilter === 'all' ? watchlist : watchlist.filter(w => w.status === wlFilter);
-  if (!list.length) { grid.innerHTML = '<div class="empty-state">Search and add anime!</div>'; return; }
+  if (!list.length) { grid.innerHTML = '<div class="grid-msg">Search and add anime to your watchlist.</div>'; return; }
   grid.innerHTML = list.map(w => `
     <div class="wl-card">
       <img src="${w.image}" alt="${w.title}">
-      <div class="wl-card-info">
+      <div class="wl-card-body">
         <h4 title="${w.title}">${w.title}</h4>
         <span class="wl-badge ${w.status}">${w.status.replace(/-/g, ' ')}</span>
         <div class="wl-actions">
@@ -427,30 +404,18 @@ function renderWl() {
 // ===== News =====
 async function loadNews() {
   const grid = document.getElementById('news-grid');
-  grid.innerHTML = '<div class="loading">Loading...</div>';
+  grid.innerHTML = '<div class="grid-msg">Loading...</div>';
   try {
     const res = await fetch('https://api.jikan.moe/v4/watch/promos?page=1&limit=10');
     const data = await res.json();
-    if (!data.data?.length) { grid.innerHTML = '<div class="empty-state">No news.</div>'; return; }
+    if (!data.data?.length) { grid.innerHTML = '<div class="grid-msg">No news available right now.</div>'; return; }
     grid.innerHTML = data.data.map(n => `
       <div class="news-item" onclick="window.open('${n.trailer?.url || '#'}','_blank')">
         <img src="${n.entry?.images?.jpg?.image_url || ''}" alt="">
         <div><h4>${n.title}</h4><p>${n.entry?.title || ''}</p><small>Promo</small></div>
       </div>
     `).join('');
-  } catch (e) { grid.innerHTML = '<div class="empty-state">Error loading news.</div>'; }
-}
-
-// ===== Particles =====
-function createParticles() {
-  const c = document.getElementById('particles');
-  for (let i = 0; i < 30; i++) {
-    const p = document.createElement('div');
-    p.className = 'particle';
-    const s = Math.random() * 5 + 2;
-    p.style.cssText = `width:${s}px;height:${s}px;left:${Math.random()*100}%;animation-duration:${Math.random()*20+10}s;animation-delay:${Math.random()*10}s;background:${['var(--accent)','var(--pink)','var(--blue)'][Math.floor(Math.random()*3)]}`;
-    c.appendChild(p);
-  }
+  } catch (e) { grid.innerHTML = '<div class="grid-msg">Error loading news.</div>'; }
 }
 
 // ===== Stats Counter =====
@@ -470,6 +435,5 @@ function animateStats() {
 }
 
 // ===== Init =====
-createParticles();
 renderWl();
 animateStats();
