@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AInime — AI Anime Companion</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="particles" id="particles"></div>
+
+  <nav>
+    <div class="logo">AInime</div>
+    <div class="nav-links">
+      <a href="#home" class="active" onclick="showSection('home')">Home</a>
+      <a href="#chat" onclick="showSection('chat')">AI Chat</a>
+      <a href="#recommend" onclick="showSection('recommend')">Recommender</a>
+      <a href="#characters" onclick="showSection('characters')">Characters</a>
+    </div>
+  </nav>
+
+  <!-- HOME -->
+  <section id="home" class="section active">
+    <div class="hero">
+      <h1><span class="gradient">AInime</span></h1>
+      <p class="subtitle">Your AI-Powered Anime Companion</p>
+      <p class="desc">Chat with anime characters, get personalized recommendations, and explore the anime universe with the power of AI.</p>
+      <div class="hero-btns">
+        <button class="btn primary" onclick="showSection('chat')">Start Chatting</button>
+        <button class="btn secondary" onclick="showSection('recommend')">Get Recommendations</button>
+      </div>
+    </div>
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-icon"> </div>
+        <h3>AI Character Chat</h3>
+        <p>Talk to your favorite anime characters powered by advanced AI language models.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"> </div>
+        <h3>Smart Recommendations</h3>
+        <p>Describe your mood or preferences and get personalized anime suggestions.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"> </div>
+        <h3>Character Explorer</h3>
+        <p>Discover detailed info about thousands of anime characters from MyAnimeList.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI CHAT -->
+  <section id="chat" class="section">
+    <div class="chat-container">
+      <div class="chat-sidebar">
+        <h3>Choose Character</h3>
+        <div class="character-list" id="character-list">
+          <div class="char-item active" onclick="selectCharacter(0)">
+            <span class="char-avatar">⚔️</span>
+            <div><strong>Gojo Satoru</strong><br><small>Jujutsu Kaisen</small></div>
+          </div>
+          <div class="char-item" onclick="selectCharacter(1)">
+            <span class="char-avatar"> </span>
+            <div><strong>Zero Two</strong><br><small>Darling in the Franxx</small></div>
+          </div>
+          <div class="char-item" onclick="selectCharacter(2)">
+            <span class="char-avatar">⚡</span>
+            <div><strong>Levi Ackerman</strong><br><small>Attack on Titan</small></div>
+          </div>
+          <div class="char-item" onclick="selectCharacter(3)">
+            <span class="char-avatar"> </span>
+            <div><strong>Makima</strong><br><small>Chainsaw Man</small></div>
+          </div>
+          <div class="char-item" onclick="selectCharacter(4)">
+            <span class="char-avatar"> </span>
+            <div><strong>Furina</strong><br><small>Genshin Impact</small></div>
+          </div>
+        </div>
+        <div class="api-config">
+          <h4>API Settings</h4>
+          <input type="text" id="api-url" placeholder="API Base URL" value="">
+          <input type="password" id="api-key" placeholder="API Key">
+          <select id="api-model">
+            <option value="gpt-4o-mini">GPT-4o Mini</option>
+            <option value="gpt-4o">GPT-4o</option>
+            <option value="claude-3-5-sonnet">Claude 3.5 Sonnet</option>
+            <option value="custom">Custom Model</option>
+          </select>
+          <button class="btn small" onclick="saveApiConfig()">Save Config</button>
+        </div>
+      </div>
+      <div class="chat-main">
+        <div class="chat-header" id="chat-header">
+          <span class="char-avatar">⚔️</span>
+          <div><strong>Gojo Satoru</strong><br><small>Ready to chat</small></div>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+          <div class="msg bot">
+            <div class="msg-content">
+              <strong>Gojo Satoru:</strong><br>
+              Yo! The strongest is here. What do you want to talk about?  ✨
+            </div>
+          </div>
+        </div>
+        <div class="chat-input">
+          <input type="text" id="user-input" placeholder="Type your message..." onkeypress="if(event.key==='Enter')sendMessage()">
+          <button class="btn primary" onclick="sendMessage()">Send</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RECOMMENDER -->
+  <section id="recommend" class="section">
+    <div class="recommend-container">
+      <h2>AI Anime Recommender</h2>
+      <p>Describe what you're in the mood for and our AI will suggest the perfect anime!</p>
+      <div class="mood-grid">
+        <button class="mood-btn" onclick="setMood('action-packed battles and epic fights')">⚔️ Action</button>
+        <button class="mood-btn" onclick="setMood('heartwarming romance and love stories')">  Romance</button>
+        <button class="mood-btn" onclick="setMood('mind-bending psychological thriller')">  Psychological</button>
+        <button class="mood-btn" onclick="setMood('funny comedy that makes me laugh out loud')">  Comedy</button>
+        <button class="mood-btn" onclick="setMood('dark fantasy with deep worldbuilding')">  Fantasy</button>
+        <button class="mood-btn" onclick="setMood('sci-fi with futuristic technology and space')">  Sci-Fi</button>
+        <button class="mood-btn" onclick="setMood('emotional slice of life stories')">  Slice of Life</button>
+        <button class="mood-btn" onclick="setMood('horror and supernatural mysteries')">  Horror</button>
+      </div>
+      <textarea id="mood-input" rows="3" placeholder="Or describe your ideal anime in your own words..."></textarea>
+      <button class="btn primary" onclick="getRecommendation()">Get AI Recommendation</button>
+      <div id="recommend-result" class="recommend-result"></div>
+    </div>
+  </section>
+
+  <!-- CHARACTERS -->
+  <section id="characters" class="section">
+    <div class="characters-container">
+      <h2>Anime Character Explorer</h2>
+      <div class="search-box">
+        <input type="text" id="char-search" placeholder="Search anime characters..." onkeypress="if(event.key==='Enter')searchCharacters()">
+        <button class="btn primary" onclick="searchCharacters()">Search</button>
+      </div>
+      <div class="char-grid" id="char-grid"></div>
+    </div>
+  </section>
+
+  <footer>
+    <p>AInime &copy; 2026 | Built with  | Powered by Jikan API & OpenAI-compatible LLMs</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
