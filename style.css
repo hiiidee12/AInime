@@ -15,9 +15,9 @@
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html { scroll-behavior: smooth; transition: background .3s, color .3s; }
+html { scroll-behavior: smooth; }
 
-*
+body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--bg);
   color: var(--ink);
@@ -33,7 +33,7 @@ nav {
   background: var(--bg2); border-bottom: 1px solid var(--line);
   z-index: 100;
 }
-'.logo { cursor: pointer; display: flex; align-items: center; }
+.logo { cursor: pointer; display: flex; align-items: center; }
 .logo img { height: 32px; }
 .nav-links { display: flex; gap: 6px; }
 .nav-links a {
@@ -307,7 +307,7 @@ nav {
   font-family: inherit; font-size: .8rem; font-weight: 500;
   color: var(--ink2); cursor: pointer; transition: all .15s;
 }
-.tab:hover, .tab.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+.tab:hover, .tab.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 
 .wl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
 .wl-card {
@@ -395,6 +395,7 @@ footer {
 @keyframes pulse { 0%, 80%, 100% { opacity: .3 } 40% { opacity: 1 } }
 
 /* ---- RESPONSIVE ---- */
+@media (max-width: 768px) {
   nav { padding: 0 16px; }
   .hamburger { display: flex; }
   .nav-links {
