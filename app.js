@@ -4,7 +4,7 @@
 const DEFAULT_API = {
   url: 'https://token-plan-sgp.xiaomimimo.com/v1',
   key: 'tp-svb882oahnydue18tmesfeqjkcuccrp06ekjqrlw0hoi51ys',
-  model: 'MiMo-V2.5'
+  model: 'mimo-v2.5'
 };
 
 function loadApiConfig() {
