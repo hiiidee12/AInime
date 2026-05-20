@@ -141,7 +141,7 @@ nav {
 .chip:hover { border-color: var(--ink3); color: var(--ink); background: var(--bg3); }
 
 /* ---- ASK AI ---- */
-.ask-wrap { max-width: 720px; }
+.ask-wrap { max-width: 920px; }
 .ask-prompts { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
 .chat-box {
   background: var(--bg2); border: 1px solid var(--line);
@@ -150,9 +150,9 @@ nav {
 .chat-msgs {
   padding: 20px; overflow-y: auto;
   display: flex; flex-direction: column; gap: 12px;
-  height: 400px;
+  height: 520px;
 }
-.msg { max-width: 82%; padding: 12px 16px; border-radius: var(--radius); line-height: 1.65; font-size: .9rem; }
+.msg { max-width: 88%; padding: 12px 16px; border-radius: var(--radius); line-height: 1.65; font-size: .9rem; }
 .msg--user {
   align-self: flex-end;
   background: var(--accent); color: #000;
