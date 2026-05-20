@@ -1,8 +1,6 @@
 // ===== AInime =====
 
-const API_URL = 'https://token-plan-sgp.xiaomimimo.com/v1';
-const API_KEY = 'tp-svb882oahnydue18tmesfeqjkcuccrp06ekjqrlw0hoi51ys';
-const API_MODEL = 'mimo-v2.5';
+const API_URL = '/api/chat';
 
 let askHistory = [];
 
@@ -102,10 +100,10 @@ async function askQuestion() {
   const sys = AI_SYSTEM + (ctx ? '\n\n--- REAL-TIME DATA ---' + ctx : '');
 
   try {
-    const res = await fetch(`${API_URL}/chat/completions`, {
+    const res = await fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
-      body: JSON.stringify({ model: API_MODEL, messages: [{ role: 'system', content: sys }, ...askHistory.slice(-10)], max_tokens: 800, temperature: 0.7 })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'system', content: sys }, ...askHistory.slice(-10)], max_tokens: 800, temperature: 0.7 })
     });
     const data = await res.json();
     removeTyping(typingId);
